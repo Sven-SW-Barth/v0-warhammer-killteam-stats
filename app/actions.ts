@@ -155,6 +155,12 @@ export async function submitGame(formData: FormData) {
       gameResult,
     )
 
+    console.log("[v0] Elo calculation:", {
+      player1: { before: player1EloBefore, after: player1NewElo, change: player1NewElo - player1EloBefore },
+      player2: { before: player2EloBefore, after: player2NewElo, change: player2NewElo - player2EloBefore },
+      gameResult,
+    })
+
     const { error: gameError } = await supabase.from("games").insert({
       country_id: countryId,
       killzone_id: killzoneId,
@@ -188,6 +194,8 @@ export async function submitGame(formData: FormData) {
     await supabase.from("players").update({ elo_rating: player1NewElo }).eq("id", player1Data.id)
 
     await supabase.from("players").update({ elo_rating: player2NewElo }).eq("id", player2Data.id)
+
+    console.log("[v0] Updated player Elo ratings in database")
 
     if (gameDateTime) {
       const gameDate = new Date(gameDateTime)

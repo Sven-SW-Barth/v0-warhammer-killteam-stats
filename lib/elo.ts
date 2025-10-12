@@ -31,9 +31,11 @@ export function calculateElo(
   const expectedPlayer1 = 1 / (1 + Math.pow(10, (player2Elo - player1Elo) / 400))
   const expectedPlayer2 = 1 / (1 + Math.pow(10, (player1Elo - player2Elo) / 400))
 
+  const player2Score = 1 - player1Score
+
   // Calculate new ratings
   const player1NewElo = Math.round(player1Elo + k1 * (player1Score - expectedPlayer1))
-  const player2NewElo = Math.round(player2Elo + k2 * (1 - player1Score - expectedPlayer2))
+  const player2NewElo = Math.round(player2Elo + k2 * (player2Score - expectedPlayer2))
 
   return {
     player1NewElo,

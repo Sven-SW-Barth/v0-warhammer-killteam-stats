@@ -78,7 +78,7 @@ export default async function LandingPage() {
       <footer className="border-t border-border bg-card/50 py-6">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm text-muted-foreground">
-            Built for the Warhammer 40k Kill Team community •{" "}
+            Built with ❤️ from stickon2 for the Kill Team community •{" "}
             <Link href="/privacy" className="underline hover:text-foreground">
               Privacy Policy
             </Link>

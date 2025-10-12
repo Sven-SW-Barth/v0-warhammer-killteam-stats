@@ -107,6 +107,9 @@ export default function PrivacyPage() {
           <p>
             If you have questions about this privacy policy or your data, please open an issue on our GitHub repository.
           </p>
+          <p className="mt-3">
+            Feel free to contact me on Discord: <strong>stickon2</strong>
+          </p>
         </section>
 
         <div className="mt-8 border-t border-border pt-6 text-sm">
