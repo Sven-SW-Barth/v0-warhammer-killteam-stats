@@ -82,6 +82,16 @@ export default function PrivacyPage() {
             KT Open Play is open source software. You can review our code, data handling practices, and security
             measures on GitHub. This transparency ensures you can verify how your data is handled.
           </p>
+          <p className="mt-3">
+            <a
+              href="https://github.com/Sven-SW-Barth/v0-warhammer-killteam-stats"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline hover:text-primary/80"
+            >
+              View the source code on GitHub →
+            </a>
+          </p>
         </section>
 
         <section>

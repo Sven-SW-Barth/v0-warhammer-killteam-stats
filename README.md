@@ -117,7 +117,7 @@ This application collects and stores:
 - Game statistics (scores, factions, dates)
 - Country/region information (optional)
 
-No personal information (email, real names, etc.) is collected. See our [[Privacy Policy](/privacy)](https://kt-open-play.vercel.app/privacy) for more details.
+No personal information (email, real names, etc.) is collected. See our [Privacy Policy](/privacy) for more details.
 
 ## License
 
