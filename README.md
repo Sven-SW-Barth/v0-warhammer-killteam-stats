@@ -121,7 +121,7 @@ No personal information (email, real names, etc.) is collected. See our [Privacy
 
 ## License
 
-GPLv3 - feel free to use this project for your own Kill Team community!
+MIT License - feel free to use this project for your own Kill Team community!
 
 ## Support
 

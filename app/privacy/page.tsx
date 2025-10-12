@@ -110,7 +110,7 @@ export default function PrivacyPage() {
         </section>
 
         <div className="mt-8 border-t border-border pt-6 text-sm">
-          <p>Last updated: January 2025</p>
+          <p>Last updated: October 2025</p>
         </div>
       </div>
     </div>
