@@ -28,6 +28,8 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
   const [showSuccessScreen, setShowSuccessScreen] = useState(false)
   const [mapLayout, setMapLayout] = useState<string>("")
   const [customMapLayout, setCustomMapLayout] = useState<string>("")
+  const [useCustomDate, setUseCustomDate] = useState(false)
+  const [customDate, setCustomDate] = useState<string>("")
 
   const [player1Scores, setPlayer1Scores] = useState({ tacop: 0, critop: 0, killop: 0 })
   const [player1ScoreErrors, setPlayer1ScoreErrors] = useState({ tacop: false, critop: false, killop: false })
@@ -126,6 +128,10 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
       formData.set("is_anonymous_opponent", "true")
     }
 
+    if (useCustomDate && customDate) {
+      formData.set("custom_date", customDate)
+    }
+
     try {
       const result = await submitGame(formData)
 
@@ -135,6 +141,8 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
         e.currentTarget.reset()
         setMapLayout("")
         setCustomMapLayout("")
+        setUseCustomDate(false)
+        setCustomDate("")
         setPlayer1Id("")
         setPlayer1Scores({ tacop: 0, critop: 0, killop: 0 })
         setPlayer1ScoreErrors({ tacop: false, critop: false, killop: false })
@@ -302,6 +310,33 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="use_custom_date"
+                    checked={useCustomDate}
+                    onChange={(e) => setUseCustomDate(e.target.checked)}
+                    className="h-4 w-4 rounded border-border"
+                  />
+                  <Label htmlFor="use_custom_date" className="text-sm font-normal cursor-pointer">
+                    Set custom game date
+                  </Label>
+                </div>
+                {useCustomDate && (
+                  <div className="space-y-2">
+                    <Label htmlFor="custom_date">Game Date</Label>
+                    <Input
+                      id="custom_date"
+                      type="datetime-local"
+                      value={customDate}
+                      onChange={(e) => setCustomDate(e.target.value)}
+                      max={new Date().toISOString().slice(0, 16)}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -11,6 +11,7 @@ export async function submitGame(formData: FormData) {
     const killzoneId = Number.parseInt(formData.get("killzone") as string)
     const mapLayout = formData.get("map_layout") as string
     const critopId = Number.parseInt(formData.get("critop") as string)
+    const customDate = formData.get("custom_date") as string | null
 
     // Player 1 data - can be either ID or playertag
     const player1Value = formData.get("player1_id") as string
@@ -165,6 +166,7 @@ export async function submitGame(formData: FormData) {
       player2_tacop_score: player2TacopScore,
       player2_critop_score: player2CritopScore,
       player2_killop_score: player2KillopScore,
+      ...(customDate && { created_at: new Date(customDate).toISOString() }),
     })
 
     if (gameError) throw gameError

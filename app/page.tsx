@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
+import { Footer } from "@/components/footer"
 
 export default async function LandingPage() {
   const supabase = await createClient()
@@ -74,6 +75,7 @@ export default async function LandingPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }
