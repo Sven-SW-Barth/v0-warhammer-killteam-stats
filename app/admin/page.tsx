@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -21,6 +20,13 @@ export default function AdminPage() {
     message: string
   } | null>(null)
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isAuth = sessionStorage.getItem("admin_authenticated") === "true"
+      setIsAuthenticated(isAuth)
+    }
+  }, [])
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -37,7 +43,9 @@ export default function AdminPage() {
 
       if (data.success) {
         setIsAuthenticated(true)
-        sessionStorage.setItem("admin_authenticated", "true")
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("admin_authenticated", "true")
+        }
       } else {
         setError("Invalid password")
       }
@@ -50,7 +58,9 @@ export default function AdminPage() {
 
   const handleLogout = () => {
     setIsAuthenticated(false)
-    sessionStorage.removeItem("admin_authenticated")
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("admin_authenticated")
+    }
     setPassword("")
   }
 
@@ -85,11 +95,6 @@ export default function AdminPage() {
       setIsRecalculating(false)
     }
   }
-
-  useState(() => {
-    const isAuth = sessionStorage.getItem("admin_authenticated") === "true"
-    setIsAuthenticated(isAuth)
-  })
 
   if (!isAuthenticated) {
     return (
