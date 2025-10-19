@@ -31,7 +31,8 @@ killteams = supabase.table("killteams").select("*").execute()
 print(f"[v0] Found {len(killteams.data)} killteams")
 
 if not all([countries.data, killzones.data, critops.data, tacops.data, killteams.data]):
-    print("[v0] WARNING: Some reference data is missing, but continuing anyway")
+    print("[v0] ERROR: Missing reference data. Please run the seed scripts first.")
+    exit(1)
 
 # Select specific killteams to use (only 5 to ensure each appears 3+ times)
 target_killteams = ["Phobos Strike Team", "Kommandos", "Pathfinders", "Legionary", "Kasrkin"]

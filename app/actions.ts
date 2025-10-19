@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
-import { calculateElo, getGameResult } from "@/lib/elo"
 
 export async function submitGame(formData: FormData) {
   const supabase = await createClient()
@@ -12,8 +11,6 @@ export async function submitGame(formData: FormData) {
     const killzoneId = Number.parseInt(formData.get("killzone") as string)
     const mapLayout = formData.get("map_layout") as string
     const critopId = Number.parseInt(formData.get("critop") as string)
-
-    const gameDateTime = formData.get("game_datetime") as string | null
 
     // Player 1 data - can be either ID or playertag
     const player1Value = formData.get("player1_id") as string
@@ -34,8 +31,10 @@ export async function submitGame(formData: FormData) {
     const player2CritopScore = Number.parseInt(formData.get("player2_critop_score") as string)
     const player2KillopScore = Number.parseInt(formData.get("player2_killop_score") as string)
 
+    const isAnonymousOpponent = formData.get("is_anonymous_opponent") === "true"
+
     // Validate inputs
-    if (!player1Value || !player2Value || !player1PrimaryOp || !player2PrimaryOp) {
+    if (!player1Value || (!player2Value && !isAnonymousOpponent) || !player1PrimaryOp || !player2PrimaryOp) {
       return { error: "All required fields must be filled" }
     }
 
@@ -98,68 +97,52 @@ export async function submitGame(formData: FormData) {
     }
 
     let player2Data
-    const player2Id = Number.parseInt(player2Value)
 
-    if (!isNaN(player2Id)) {
-      // Value is a valid ID, fetch existing player
-      const { data } = await supabase.from("players").select("id").eq("id", player2Id).maybeSingle()
-      player2Data = data
-    }
-
-    if (!player2Data) {
-      // Value is a playertag or ID not found, get or create by playertag
-      const { data } = await supabase.from("players").select("id").eq("playertag", player2Value).maybeSingle()
+    if (isAnonymousOpponent) {
+      // Get or create the Anonymous player
+      const { data } = await supabase.from("players").select("id").eq("playertag", "Anonymous").maybeSingle()
 
       if (data) {
         player2Data = data
       } else {
-        // Create new player
-        const { data: newPlayer2, error: player2Error } = await supabase
+        // Create Anonymous player if it doesn't exist
+        const { data: newAnonymous, error: anonymousError } = await supabase
           .from("players")
-          .insert({ playertag: player2Value })
+          .insert({ playertag: "Anonymous", elo_rating: 1200 })
           .select("id")
           .single()
 
-        if (player2Error) throw player2Error
-        player2Data = newPlayer2
+        if (anonymousError) throw anonymousError
+        player2Data = newAnonymous
+      }
+    } else {
+      const player2Id = Number.parseInt(player2Value)
+
+      if (!isNaN(player2Id)) {
+        // Value is a valid ID, fetch existing player
+        const { data } = await supabase.from("players").select("id").eq("id", player2Id).maybeSingle()
+        player2Data = data
+      }
+
+      if (!player2Data) {
+        // Value is a playertag or ID not found, get or create by playertag
+        const { data } = await supabase.from("players").select("id").eq("playertag", player2Value).maybeSingle()
+
+        if (data) {
+          player2Data = data
+        } else {
+          // Create new player
+          const { data: newPlayer2, error: player2Error } = await supabase
+            .from("players")
+            .insert({ playertag: player2Value })
+            .select("id")
+            .single()
+
+          if (player2Error) throw player2Error
+          player2Data = newPlayer2
+        }
       }
     }
-
-    const { data: player1Stats } = await supabase
-      .from("players")
-      .select("elo_rating, games_played")
-      .eq("id", player1Data.id)
-      .single()
-
-    const { data: player2Stats } = await supabase
-      .from("players")
-      .select("elo_rating, games_played")
-      .eq("id", player2Data.id)
-      .single()
-
-    const player1EloBefore = player1Stats?.elo_rating ?? 1200
-    const player2EloBefore = player2Stats?.elo_rating ?? 1200
-    const player1GamesBefore = player1Stats?.games_played ?? 0
-    const player2GamesBefore = player2Stats?.games_played ?? 0
-
-    const player1TotalScore = player1PrimaryOpScore + player1TacopScore + player1CritopScore + player1KillopScore
-    const player2TotalScore = player2PrimaryOpScore + player2TacopScore + player2CritopScore + player2KillopScore
-
-    const gameResult = getGameResult(player1TotalScore, player2TotalScore)
-
-    const { player1NewElo, player2NewElo } = calculateElo(
-      player1EloBefore,
-      player2EloBefore,
-      player1GamesBefore,
-      player2GamesBefore,
-      gameResult,
-    )
-
-    console.log("[v0] Elo calculation:", {
-      player1: { before: player1EloBefore, after: player1NewElo, change: player1NewElo - player1EloBefore },
-      player2: { before: player2EloBefore, after: player2NewElo, change: player2NewElo - player2EloBefore },
-      gameResult,
-    })
 
     const { error: gameError } = await supabase.from("games").insert({
       country_id: countryId,
@@ -174,8 +157,6 @@ export async function submitGame(formData: FormData) {
       player1_tacop_score: player1TacopScore,
       player1_critop_score: player1CritopScore,
       player1_killop_score: player1KillopScore,
-      player1_elo_before: player1EloBefore,
-      player1_elo_after: player1NewElo,
       player2_id: player2Data.id,
       player2_killteam_id: player2KillteamId,
       player2_tacop_id: player2TacopId,
@@ -184,28 +165,9 @@ export async function submitGame(formData: FormData) {
       player2_tacop_score: player2TacopScore,
       player2_critop_score: player2CritopScore,
       player2_killop_score: player2KillopScore,
-      player2_elo_before: player2EloBefore,
-      player2_elo_after: player2NewElo,
-      ...(gameDateTime && { created_at: new Date(gameDateTime).toISOString() }),
     })
 
     if (gameError) throw gameError
-
-    await supabase.from("players").update({ elo_rating: player1NewElo }).eq("id", player1Data.id)
-
-    await supabase.from("players").update({ elo_rating: player2NewElo }).eq("id", player2Data.id)
-
-    console.log("[v0] Updated player Elo ratings in database")
-
-    if (gameDateTime) {
-      const gameDate = new Date(gameDateTime)
-      const now = new Date()
-
-      if (gameDate < now) {
-        console.log("[v0] Past date detected, Elo recalculation may be needed for subsequent games")
-        // Note: User should run the Elo recalculation script to ensure all games are correctly calculated
-      }
-    }
 
     revalidatePath("/")
     revalidatePath("/stats")

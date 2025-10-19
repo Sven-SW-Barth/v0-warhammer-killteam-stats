@@ -29,9 +29,9 @@ export default async function LeaderboardsPage({
       *,
       player1:players!games_player1_id_fkey(id, playertag),
       player2:players!games_player2_id_fkey(id, playertag),
-      player1_killteam:killteams!games_player1_killteam_id_fkey!left(name),
-      player2_killteam:killteams!games_player2_killteam_id_fkey!left(name),
-      country:countries!left(id, name, code)
+      player1_killteam:killteams!games_player1_killteam_id_fkey(name),
+      player2_killteam:killteams!games_player2_killteam_id_fkey(name),
+      country:countries(id, name, code)
     `,
     )
     .gte("created_at", startDate.toISOString())
@@ -41,11 +41,7 @@ export default async function LeaderboardsPage({
     query = query.eq("country_id", countryId)
   }
 
-  const { data: games, error } = await query.order("created_at", { ascending: false })
-
-  if (error) {
-    console.error("[v0] Error fetching games:", error)
-  }
+  const { data: games } = await query.order("created_at", { ascending: false })
 
   const playerStats = new Map<
     string,
@@ -66,31 +62,28 @@ export default async function LeaderboardsPage({
   >()
 
   allPlayers?.forEach((player) => {
-    playerStats.set(player.id.toString(), {
-      id: player.id.toString(),
-      name: player.playertag,
-      wins: 0,
-      losses: 0,
-      draws: 0,
-      totalGames: 0,
-      totalScore: 0,
-      avgScore: 0,
-      countryCode: null,
-      countryName: null,
-      countryCounts: new Map(),
-      eloRating: player.elo_rating || 1200,
-    })
+    if (player.playertag !== "Anonymous") {
+      playerStats.set(player.id.toString(), {
+        id: player.id.toString(),
+        name: player.playertag,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        totalGames: 0,
+        totalScore: 0,
+        avgScore: 0,
+        countryCode: null,
+        countryName: null,
+        countryCounts: new Map(),
+        eloRating: player.elo_rating || 1200,
+      })
+    }
   })
 
   games?.forEach((game) => {
     const player1 = game.player1 as { id: string; playertag: string }
     const player2 = game.player2 as { id: string; playertag: string }
     const country = game.country as { id: string; name: string; code: string } | null
-
-    if (!player1 || !player2) {
-      console.warn("[v0] Skipping game with missing player data:", game.id)
-      return
-    }
 
     const player1Id = player1.id.toString()
     const player2Id = player2.id.toString()
@@ -106,7 +99,7 @@ export default async function LeaderboardsPage({
       game.player2_killop_score +
       (game.player2_primary_op_score || 0)
 
-    if (!playerStats.has(player1Id)) {
+    if (player1.playertag !== "Anonymous" && !playerStats.has(player1Id)) {
       playerStats.set(player1Id, {
         id: player1Id,
         name: player1.playertag,
@@ -122,7 +115,7 @@ export default async function LeaderboardsPage({
         eloRating: 1200,
       })
     }
-    if (!playerStats.has(player2Id)) {
+    if (player2.playertag !== "Anonymous" && !playerStats.has(player2Id)) {
       playerStats.set(player2Id, {
         id: player2Id,
         name: player2.playertag,
@@ -139,31 +132,38 @@ export default async function LeaderboardsPage({
       })
     }
 
-    const stats1 = playerStats.get(player1Id)!
-    const stats2 = playerStats.get(player2Id)!
+    const stats1 = player1.playertag !== "Anonymous" ? playerStats.get(player1Id) : null
+    const stats2 = player2.playertag !== "Anonymous" ? playerStats.get(player2Id) : null
 
-    if (country && country.code !== "INT") {
+    if (stats1 && country && country.code !== "INT") {
       const count1 = stats1.countryCounts.get(country.code) || 0
       stats1.countryCounts.set(country.code, count1 + 1)
+    }
 
+    if (stats2 && country && country.code !== "INT") {
       const count2 = stats2.countryCounts.get(country.code) || 0
       stats2.countryCounts.set(country.code, count2 + 1)
     }
 
-    stats1.totalGames++
-    stats2.totalGames++
-    stats1.totalScore += player1Total
-    stats2.totalScore += player2Total
+    if (stats1) {
+      stats1.totalGames++
+      stats1.totalScore += player1Total
+    }
+
+    if (stats2) {
+      stats2.totalGames++
+      stats2.totalScore += player2Total
+    }
 
     if (player1Total > player2Total) {
-      stats1.wins++
-      stats2.losses++
+      if (stats1) stats1.wins++
+      if (stats2) stats2.losses++
     } else if (player2Total > player1Total) {
-      stats2.wins++
-      stats1.losses++
+      if (stats2) stats2.wins++
+      if (stats1) stats1.losses++
     } else {
-      stats1.draws++
-      stats2.draws++
+      if (stats1) stats1.draws++
+      if (stats2) stats2.draws++
     }
   })
 

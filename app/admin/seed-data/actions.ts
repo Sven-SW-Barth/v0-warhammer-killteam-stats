@@ -17,7 +17,7 @@ export async function seedMockData() {
       .in("name", ["Phobos Strike Team", "Kommandos", "Pathfinders", "Legionary", "Kasrkin"])
 
     if (!countries?.length || !killzones?.length || !critops?.length || !tacops?.length || !killteams?.length) {
-      console.log("[v0] Warning: Some reference data is missing, but continuing anyway")
+      return { error: "Reference data not found. Please run the seed scripts first." }
     }
 
     // Create players

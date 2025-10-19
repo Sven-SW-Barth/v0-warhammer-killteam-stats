@@ -7,12 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 import { submitGame } from "@/app/actions"
 import { useRouter } from "next/navigation"
 import { PlayerSearchCombobox } from "@/components/player-search-combobox"
-import { CheckCircle2, Info } from "lucide-react"
+import { CheckCircle2 } from "lucide-react"
 
 type ReferenceData = {
   countries: Array<{ id: number; name: string }>
@@ -30,8 +28,6 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
   const [showSuccessScreen, setShowSuccessScreen] = useState(false)
   const [mapLayout, setMapLayout] = useState<string>("")
   const [customMapLayout, setCustomMapLayout] = useState<string>("")
-  const [manualDateEntry, setManualDateEntry] = useState(false)
-  const [gameDateTime, setGameDateTime] = useState<string>("")
 
   const [player1Scores, setPlayer1Scores] = useState({ tacop: 0, critop: 0, killop: 0 })
   const [player1ScoreErrors, setPlayer1ScoreErrors] = useState({ tacop: false, critop: false, killop: false })
@@ -42,6 +38,8 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
   const [player2ScoreErrors, setPlayer2ScoreErrors] = useState({ tacop: false, critop: false, killop: false })
   const [player2PrimaryOp, setPlayer2PrimaryOp] = useState<string>("")
   const [player2Id, setPlayer2Id] = useState<string>("")
+
+  const [isAnonymousOpponent, setIsAnonymousOpponent] = useState(false)
 
   const [formFields, setFormFields] = useState({
     country: false,
@@ -124,8 +122,8 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
     formData.set("player1_primary_op_score", player1PrimaryScore.toString())
     formData.set("player2_primary_op_score", player2PrimaryScore.toString())
 
-    if (manualDateEntry && gameDateTime) {
-      formData.set("game_datetime", gameDateTime)
+    if (isAnonymousOpponent) {
+      formData.set("is_anonymous_opponent", "true")
     }
 
     try {
@@ -137,8 +135,6 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
         e.currentTarget.reset()
         setMapLayout("")
         setCustomMapLayout("")
-        setManualDateEntry(false)
-        setGameDateTime("")
         setPlayer1Id("")
         setPlayer1Scores({ tacop: 0, critop: 0, killop: 0 })
         setPlayer1ScoreErrors({ tacop: false, critop: false, killop: false })
@@ -147,6 +143,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
         setPlayer2Scores({ tacop: 0, critop: 0, killop: 0 })
         setPlayer2ScoreErrors({ tacop: false, critop: false, killop: false })
         setPlayer2PrimaryOp("")
+        setIsAnonymousOpponent(false)
         setFormFields({
           country: false,
           killzone: false,
@@ -219,50 +216,6 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
           {/* Game Details Section */}
           <div className="space-y-4 rounded-lg border border-border bg-muted/50 p-4">
             <h3 className="text-lg font-semibold text-foreground">Game Details</h3>
-
-            <div className="space-y-3 pb-2 border-b border-border">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="manual-date"
-                  checked={manualDateEntry}
-                  onCheckedChange={(checked) => setManualDateEntry(checked === true)}
-                />
-                <Label htmlFor="manual-date" className="cursor-pointer font-normal">
-                  Manually enter date
-                </Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
-                        <Info className="h-4 w-4" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p className="text-xs">
-                        Games are recorded on current time by default. If game was held in the past please enter date
-                        manually.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-
-              {manualDateEntry && (
-                <div className="space-y-2 pl-6">
-                  <Label htmlFor="game-datetime">Game Date & Time</Label>
-                  <Input
-                    id="game-datetime"
-                    type="datetime-local"
-                    value={gameDateTime}
-                    onChange={(e) => setGameDateTime(e.target.value)}
-                    required={manualDateEntry}
-                    max={new Date().toISOString().slice(0, 16)}
-                    className="w-full"
-                  />
-                </div>
-              )}
-            </div>
-
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="country">Country</Label>
@@ -556,7 +509,29 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
               {/* Player 2 Info */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="player2_id">Player</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="player2_id">Player</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="anonymous_opponent"
+                        checked={isAnonymousOpponent}
+                        onChange={(e) => {
+                          setIsAnonymousOpponent(e.target.checked)
+                          if (e.target.checked) {
+                            setPlayer2Id("")
+                            setFormFields((prev) => ({ ...prev, player2_name: true }))
+                          } else {
+                            setFormFields((prev) => ({ ...prev, player2_name: false }))
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-border"
+                      />
+                      <Label htmlFor="anonymous_opponent" className="text-sm font-normal cursor-pointer">
+                        Anonymous opponent
+                      </Label>
+                    </div>
+                  </div>
                   <PlayerSearchCombobox
                     value={player2Id}
                     onValueChange={(value) => {
@@ -565,7 +540,8 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
                     }}
                     placeholder="Search by name or ID (#123)"
                     name="player2_id"
-                    required
+                    required={!isAnonymousOpponent}
+                    disabled={isAnonymousOpponent}
                   />
                 </div>
 

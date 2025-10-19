@@ -49,15 +49,6 @@ interface KillzoneStats {
   winRate: number
 }
 
-interface OpponentStats {
-  name: string
-  games: number
-  wins: number
-  losses: number
-  draws: number
-  winRate: number
-}
-
 export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }: PlayerDetailsModalProps) {
   const [loading, setLoading] = useState(true)
   const [tacOpStats, setTacOpStats] = useState<TacOpStats[]>([])
@@ -65,7 +56,6 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
   const [primaryOpStats, setPrimaryOpStats] = useState<PrimaryOpStats[]>([])
   const [killteamStats, setKillteamStats] = useState<KillteamStats[]>([])
   const [killzoneStats, setKillzoneStats] = useState<KillzoneStats[]>([])
-  const [opponentStats, setOpponentStats] = useState<OpponentStats[]>([])
 
   useEffect(() => {
     if (open && playerId) {
@@ -77,13 +67,12 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
     setLoading(true)
     const supabase = createClient()
 
+    // Fetch all games for this player
     const { data: games } = await supabase
       .from("games")
       .select(
         `
         *,
-        player1:players!games_player1_id_fkey(id, playertag),
-        player2:players!games_player2_id_fkey(id, playertag),
         player1_tacop:tacops!games_player1_tacop_id_fkey(name),
         player2_tacop:tacops!games_player2_tacop_id_fkey(name),
         critop:critops(name),
@@ -99,59 +88,7 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
       return
     }
 
-    const opponentMap = new Map<string, { name: string; games: number; wins: number; losses: number; draws: number }>()
-    games.forEach((game) => {
-      const isPlayer1 = game.player1_id.toString() === playerId
-      const opponent = isPlayer1
-        ? (game.player2 as { id: string; playertag: string })
-        : (game.player1 as { id: string; playertag: string })
-
-      if (!opponent) return
-
-      const playerScore = isPlayer1
-        ? game.player1_tacop_score +
-          game.player1_critop_score +
-          game.player1_killop_score +
-          (game.player1_primary_op_score || 0)
-        : game.player2_tacop_score +
-          game.player2_critop_score +
-          game.player2_killop_score +
-          (game.player2_primary_op_score || 0)
-
-      const opponentScore = isPlayer1
-        ? game.player2_tacop_score +
-          game.player2_critop_score +
-          game.player2_killop_score +
-          (game.player2_primary_op_score || 0)
-        : game.player1_tacop_score +
-          game.player1_critop_score +
-          game.player1_killop_score +
-          (game.player1_primary_op_score || 0)
-
-      if (!opponentMap.has(opponent.playertag)) {
-        opponentMap.set(opponent.playertag, { name: opponent.playertag, games: 0, wins: 0, losses: 0, draws: 0 })
-      }
-      const stats = opponentMap.get(opponent.playertag)!
-      stats.games++
-      if (playerScore > opponentScore) {
-        stats.wins++
-      } else if (playerScore < opponentScore) {
-        stats.losses++
-      } else {
-        stats.draws++
-      }
-    })
-
-    const opponents: OpponentStats[] = Array.from(opponentMap.values()).map((stats) => ({
-      name: stats.name,
-      games: stats.games,
-      wins: stats.wins,
-      losses: stats.losses,
-      draws: stats.draws,
-      winRate: (stats.wins / stats.games) * 100,
-    }))
-    setOpponentStats(opponents.sort((a, b) => b.games - a.games).slice(0, 3))
-
+    // Calculate TacOp statistics
     const tacOpMap = new Map<string, { count: number; totalScore: number }>()
     games.forEach((game) => {
       const isPlayer1 = game.player1_id.toString() === playerId
@@ -175,6 +112,7 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
     }))
     setTacOpStats(tacOps.sort((a, b) => b.count - a.count))
 
+    // Calculate CritOp statistics
     const critOpMap = new Map<string, { count: number; totalScore: number }>()
     games.forEach((game) => {
       const isPlayer1 = game.player1_id.toString() === playerId
@@ -196,6 +134,7 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
     }))
     setCritOpStats(critOps.sort((a, b) => b.count - a.count))
 
+    // Calculate Primary Op statistics
     const primaryOpMap = new Map<string, { count: number; totalScore: number }>()
     games.forEach((game) => {
       const isPlayer1 = game.player1_id.toString() === playerId
@@ -219,6 +158,7 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
     }))
     setPrimaryOpStats(primaryOps.sort((a, b) => b.count - a.count))
 
+    // Calculate Killteam statistics
     const killteamMap = new Map<string, { games: number; wins: number; losses: number; draws: number }>()
     games.forEach((game) => {
       const isPlayer1 = game.player1_id.toString() === playerId
@@ -270,6 +210,7 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
     }))
     setKillteamStats(killteams.sort((a, b) => b.games - a.games))
 
+    // Calculate Killzone statistics
     const killzoneMap = new Map<string, { games: number; wins: number; losses: number; draws: number }>()
     games.forEach((game) => {
       const isPlayer1 = game.player1_id.toString() === playerId
@@ -338,7 +279,93 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Kill Teams first */}
+            {/* CritOps Statistics */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Critical Operations</CardTitle>
+                <CardDescription className="text-xs">CritOp performance and average scores</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="h-8 text-xs">CritOp</TableHead>
+                      <TableHead className="h-8 text-xs text-right">Games</TableHead>
+                      <TableHead className="h-8 text-xs text-right">Avg</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {critOpStats.map((stat) => (
+                      <TableRow key={stat.name} className="h-8">
+                        <TableCell className="py-1 text-sm font-medium">{stat.name}</TableCell>
+                        <TableCell className="py-1 text-sm text-right">{stat.count}</TableCell>
+                        <TableCell className="py-1 text-sm text-right">{stat.avgScore.toFixed(1)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* TacOps Statistics */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Tactical Operations</CardTitle>
+                <CardDescription className="text-xs">TacOp usage and average scores</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="h-8 text-xs">TacOp</TableHead>
+                      <TableHead className="h-8 text-xs text-right">Games</TableHead>
+                      <TableHead className="h-8 text-xs text-right">Avg</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tacOpStats.map((stat) => (
+                      <TableRow key={stat.name} className="h-8">
+                        <TableCell className="py-1 text-sm font-medium">{stat.name}</TableCell>
+                        <TableCell className="py-1 text-sm text-right">{stat.count}</TableCell>
+                        <TableCell className="py-1 text-sm text-right">{stat.avgScore.toFixed(1)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Primary Ops Statistics */}
+            {primaryOpStats.length > 0 && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Primary Operations</CardTitle>
+                  <CardDescription className="text-xs">Primary Op usage and average scores</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="h-8 text-xs">Primary Op</TableHead>
+                        <TableHead className="h-8 text-xs text-right">Games</TableHead>
+                        <TableHead className="h-8 text-xs text-right">Avg</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {primaryOpStats.map((stat) => (
+                        <TableRow key={stat.name} className="h-8">
+                          <TableCell className="py-1 text-sm font-medium">{stat.name}</TableCell>
+                          <TableCell className="py-1 text-sm text-right">{stat.count}</TableCell>
+                          <TableCell className="py-1 text-sm text-right">{stat.avgScore.toFixed(1)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Killteam Statistics */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Kill Teams</CardTitle>
@@ -374,6 +401,7 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
               </CardContent>
             </Card>
 
+            {/* Killzone Statistics */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Kill Zones</CardTitle>
@@ -408,126 +436,6 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
                 </Table>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Tactical Operations</CardTitle>
-                <CardDescription className="text-xs">TacOp usage and average scores</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="h-8 text-xs">TacOp</TableHead>
-                      <TableHead className="h-8 text-xs text-right">Games</TableHead>
-                      <TableHead className="h-8 text-xs text-right">Avg</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tacOpStats.map((stat) => (
-                      <TableRow key={stat.name} className="h-8">
-                        <TableCell className="py-1 text-sm font-medium">{stat.name}</TableCell>
-                        <TableCell className="py-1 text-sm text-right">{stat.count}</TableCell>
-                        <TableCell className="py-1 text-sm text-right">{stat.avgScore.toFixed(1)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {primaryOpStats.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Primary Operations</CardTitle>
-                  <CardDescription className="text-xs">Primary Op usage and average scores</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="h-8 text-xs">Primary Op</TableHead>
-                        <TableHead className="h-8 text-xs text-right">Games</TableHead>
-                        <TableHead className="h-8 text-xs text-right">Avg</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {primaryOpStats.map((stat) => (
-                        <TableRow key={stat.name} className="h-8">
-                          <TableCell className="py-1 text-sm font-medium">{stat.name}</TableCell>
-                          <TableCell className="py-1 text-sm text-right">{stat.count}</TableCell>
-                          <TableCell className="py-1 text-sm text-right">{stat.avgScore.toFixed(1)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            )}
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Critical Operations</CardTitle>
-                <CardDescription className="text-xs">CritOp performance and average scores</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="h-8 text-xs">CritOp</TableHead>
-                      <TableHead className="h-8 text-xs text-right">Games</TableHead>
-                      <TableHead className="h-8 text-xs text-right">Avg</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {critOpStats.map((stat) => (
-                      <TableRow key={stat.name} className="h-8">
-                        <TableCell className="py-1 text-sm font-medium">{stat.name}</TableCell>
-                        <TableCell className="py-1 text-sm text-right">{stat.count}</TableCell>
-                        <TableCell className="py-1 text-sm text-right">{stat.avgScore.toFixed(1)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {opponentStats.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Top 3 Most Played Opponents</CardTitle>
-                  <CardDescription className="text-xs">Most frequent matchups and head-to-head records</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="h-8 text-xs">Opponent</TableHead>
-                        <TableHead className="h-8 text-xs text-right">Games</TableHead>
-                        <TableHead className="h-8 text-xs text-right">W</TableHead>
-                        <TableHead className="h-8 text-xs text-right">L</TableHead>
-                        <TableHead className="h-8 text-xs text-right">D</TableHead>
-                        <TableHead className="h-8 text-xs text-right">Win %</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {opponentStats.map((stat) => (
-                        <TableRow key={stat.name} className="h-8">
-                          <TableCell className="py-1 text-sm font-medium">{stat.name}</TableCell>
-                          <TableCell className="py-1 text-sm text-right">{stat.games}</TableCell>
-                          <TableCell className="py-1 text-sm text-right text-green-500">{stat.wins}</TableCell>
-                          <TableCell className="py-1 text-sm text-right text-red-500">{stat.losses}</TableCell>
-                          <TableCell className="py-1 text-sm text-right text-muted-foreground">{stat.draws}</TableCell>
-                          <TableCell className="py-1 text-sm text-right font-semibold">
-                            {stat.winRate.toFixed(1)}%
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            )}
           </div>
         )}
       </DialogContent>

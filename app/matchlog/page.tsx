@@ -26,15 +26,15 @@ export default async function MatchlogPage({
     .select(
       `
       *,
-      country:countries!left(name),
-      killzone:killzones!left(name),
-      critop:critops!left(name),
+      country:countries(name),
+      killzone:killzones(name),
+      critop:critops(name),
       player1:players!games_player1_id_fkey(playertag),
       player2:players!games_player2_id_fkey(playertag),
-      player1_killteam:killteams!games_player1_killteam_id_fkey!left(name),
-      player2_killteam:killteams!games_player2_killteam_id_fkey!left(name),
-      player1_tacop:tacops!games_player1_tacop_id_fkey!left(name),
-      player2_tacop:tacops!games_player2_tacop_id_fkey!left(name)
+      player1_killteam:killteams!games_player1_killteam_id_fkey(name),
+      player2_killteam:killteams!games_player2_killteam_id_fkey(name),
+      player1_tacop:tacops!games_player1_tacop_id_fkey(name),
+      player2_tacop:tacops!games_player2_tacop_id_fkey(name)
     `,
     )
     .gte("created_at", startDate.toISOString())
@@ -44,11 +44,7 @@ export default async function MatchlogPage({
     query = query.eq("country_id", countryId)
   }
 
-  const { data: games, error } = await query.order("created_at", { ascending: false })
-
-  if (error) {
-    console.error("[v0] Error fetching games:", error)
-  }
+  const { data: games } = await query.order("created_at", { ascending: false })
 
   return (
     <div className="min-h-screen bg-background">
@@ -80,9 +76,7 @@ export default async function MatchlogPage({
               </div>
             ) : (
               <div className="flex h-32 items-center justify-center text-muted-foreground">
-                {error
-                  ? "Error loading games. Check console for details."
-                  : "No games recorded yet. Be the first to add a game!"}
+                No games recorded yet. Be the first to add a game!
               </div>
             )}
           </CardContent>

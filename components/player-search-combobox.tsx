@@ -19,6 +19,7 @@ type PlayerSearchComboboxProps = {
   placeholder?: string
   name: string
   required?: boolean
+  disabled?: boolean
 }
 
 export function PlayerSearchCombobox({
@@ -27,6 +28,7 @@ export function PlayerSearchCombobox({
   placeholder = "Search player...",
   name,
   required = false,
+  disabled = false,
 }: PlayerSearchComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [players, setPlayers] = React.useState<Player[]>([])
@@ -75,6 +77,7 @@ export function PlayerSearchCombobox({
             role="combobox"
             aria-expanded={open}
             className="w-full justify-between font-normal bg-input dark:bg-input"
+            disabled={disabled}
           >
             {displayValue ? (
               <span>
