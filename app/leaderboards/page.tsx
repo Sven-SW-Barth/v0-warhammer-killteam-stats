@@ -1,31 +1,23 @@
 import { createClient } from "@/lib/supabase/server"
-import { StatsFilters } from "@/components/stats-filters"
-import { SortablePlayersTable } from "@/components/sortable-players-table"
+import { LeaderboardsFilters } from "@/components/leaderboards-filters"
+import { LeaderboardsContent } from "@/components/leaderboards-content"
 
 export default async function LeaderboardsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ startDate?: string; endDate?: string; country?: string }>
+  searchParams: Promise<{ country?: string; search?: string }>
 }) {
   const supabase = await createClient()
   const params = await searchParams
 
-  const today = new Date()
-  const sixMonthsAgo = new Date()
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
-
-  const startDate = params.startDate ? new Date(params.startDate) : sixMonthsAgo
-  const endDate = params.endDate ? new Date(params.endDate) : today
   const countryId = params.country
 
   const { data: countries } = await supabase.from("countries").select("id, name").order("name")
 
   const { data: allPlayers } = await supabase.from("players").select("id, playertag, elo_rating")
 
-  let query = supabase
-    .from("games")
-    .select(
-      `
+  let query = supabase.from("games").select(
+    `
       *,
       player1:players!games_player1_id_fkey(id, playertag),
       player2:players!games_player2_id_fkey(id, playertag),
@@ -33,9 +25,7 @@ export default async function LeaderboardsPage({
       player2_killteam:killteams!games_player2_killteam_id_fkey(name),
       country:countries(id, name, code)
     `,
-    )
-    .gte("created_at", startDate.toISOString())
-    .lte("created_at", endDate.toISOString())
+  )
 
   if (countryId && countryId !== "all") {
     query = query.eq("country_id", countryId)
@@ -184,7 +174,7 @@ export default async function LeaderboardsPage({
     }
   })
 
-  const playerArray = Array.from(playerStats.values()).map((stats) => ({
+  let playerArray = Array.from(playerStats.values()).map((stats) => ({
     id: stats.id,
     name: stats.name,
     wins: stats.wins,
@@ -199,6 +189,17 @@ export default async function LeaderboardsPage({
     eloRating: stats.eloRating,
   }))
 
+  // When a country filter is applied, only show players who played games in that country
+  if (countryId && countryId !== "all") {
+    playerArray = playerArray.filter((player) => player.totalGames > 0)
+  }
+
+  const sortedByElo = [...playerArray].sort((a, b) => b.eloRating - a.eloRating)
+  const playersWithRanks = sortedByElo.map((player, index) => ({
+    ...player,
+    rank: index + 1,
+  }))
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 sm:py-8">
@@ -211,13 +212,9 @@ export default async function LeaderboardsPage({
           </p>
         </header>
 
-        <StatsFilters countries={countries || []} />
+        <LeaderboardsFilters countries={countries || []} />
 
-        {playerArray.length > 0 && (
-          <div className="mb-6 sm:mb-8">
-            <SortablePlayersTable players={playerArray} />
-          </div>
-        )}
+        {playersWithRanks.length > 0 && <LeaderboardsContent players={playersWithRanks} />}
       </div>
     </div>
   )

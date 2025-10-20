@@ -19,6 +19,7 @@ type Player = {
   avgScore: number
   winRate: number
   eloRating: number
+  rank: number // Added rank property
 }
 
 type SortColumn = "elo" | "games" | "winRate" | "avgScore" | "wins"
@@ -129,9 +130,9 @@ export function SortablePlayersTable({ players }: { players: Player[] }) {
                 </tr>
               </thead>
               <tbody>
-                {sortedPlayers.map((player, index) => (
+                {sortedPlayers.map((player) => (
                   <tr key={player.id} className="border-b border-border/50">
-                    <td className="py-3 text-muted-foreground">{index + 1}</td>
+                    <td className="py-3 text-muted-foreground">{player.rank}</td>
                     <td className="py-3">
                       <span className="font-mono text-xs text-muted-foreground">#{player.id}</span>
                     </td>

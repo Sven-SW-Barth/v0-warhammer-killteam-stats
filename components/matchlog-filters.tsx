@@ -48,6 +48,7 @@ export function MatchlogFilters({ countries }: MatchlogFiltersProps) {
             onValueChange={handlePlayerChange}
             placeholder="Search for a player..."
             name="player-filter"
+            allowCreate={false}
           />
         </div>
         {playerId && (

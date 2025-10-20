@@ -20,6 +20,7 @@ type PlayerSearchComboboxProps = {
   name: string
   required?: boolean
   disabled?: boolean
+  allowCreate?: boolean
 }
 
 export function PlayerSearchCombobox({
@@ -29,6 +30,7 @@ export function PlayerSearchCombobox({
   name,
   required = false,
   disabled = false,
+  allowCreate = true,
 }: PlayerSearchComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [players, setPlayers] = React.useState<Player[]>([])
@@ -66,7 +68,7 @@ export function PlayerSearchCombobox({
   const hasExactMatch = filteredPlayers.some(
     (player) => player.playertag.toLowerCase() === searchQuery.toLowerCase().trim(),
   )
-  const showCreateOption = searchQuery.trim().length > 0 && !hasExactMatch
+  const showCreateOption = allowCreate && searchQuery.trim().length > 0 && !hasExactMatch
 
   return (
     <>
@@ -93,14 +95,12 @@ export function PlayerSearchCombobox({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0" align="start">
-          <Command
-            filter={(value, search) => {
-              setSearchQuery(search)
-              if (value.startsWith("new:")) return 1
-              return filterPlayers(search).some((p) => p.id.toString() === value) ? 1 : 0
-            }}
-          >
-            <CommandInput placeholder="Search by name or ID (#123)..." />
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="Search by name or ID (#123)..."
+              value={searchQuery}
+              onValueChange={setSearchQuery}
+            />
             <CommandList>
               <CommandEmpty>{loading ? "Loading players..." : "No player found."}</CommandEmpty>
               {showCreateOption && (
@@ -110,6 +110,7 @@ export function PlayerSearchCombobox({
                     onSelect={() => {
                       onValueChange(searchQuery.trim())
                       setOpen(false)
+                      setSearchQuery("")
                     }}
                     className="text-primary"
                   >
@@ -126,6 +127,7 @@ export function PlayerSearchCombobox({
                     onSelect={(currentValue) => {
                       onValueChange(currentValue === value ? "" : currentValue)
                       setOpen(false)
+                      setSearchQuery("")
                     }}
                   >
                     <Check
