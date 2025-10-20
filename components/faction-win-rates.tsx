@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FactionDetailsDialog } from "@/components/faction-details-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 
 type FactionStat = {
   id: string
@@ -32,6 +33,9 @@ type Critop = {
   name: string
 }
 
+type SortColumn = "name" | "games" | "wins" | "losses" | "draws" | "winRate" | "avgScore"
+type SortDirection = "asc" | "desc"
+
 export function FactionWinRates({
   factionStats,
   killzones,
@@ -47,9 +51,12 @@ export function FactionWinRates({
   const [viewMode, setViewMode] = useState<"winRate" | "avgScore">("winRate")
   const [selectedFaction, setSelectedFaction] = useState<{ id: string; name: string } | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [sortColumn, setSortColumn] = useState<SortColumn>("winRate")
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
 
   const selectedKillzone = searchParams.get("killzone") || "all"
   const selectedCritop = searchParams.get("critop") || "all"
+  const excludeSeason1 = searchParams.get("excludeSeason1") === "true"
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -61,13 +68,23 @@ export function FactionWinRates({
     router.push(`/stats?${params.toString()}`)
   }
 
+  const toggleExcludeSeason1 = (checked: boolean) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (checked) {
+      params.set("excludeSeason1", "true")
+    } else {
+      params.delete("excludeSeason1")
+    }
+    router.push(`/stats?${params.toString()}`)
+  }
+
   const filteredForChart = showAllFactions ? factionStats : factionStats.filter((stat) => stat.totalGames >= 3)
 
   const sortedStats = [...filteredForChart].sort((a, b) =>
     viewMode === "winRate" ? b.winRate - a.winRate : b.avgScore - a.avgScore,
   )
 
-  const chartData = sortedStats.slice(0, 10).map((stat) => ({
+  const chartData = sortedStats.map((stat) => ({
     faction: stat.name,
     value:
       viewMode === "winRate" ? Number.parseFloat(stat.winRate.toFixed(1)) : Number.parseFloat(stat.avgScore.toFixed(1)),
@@ -78,6 +95,69 @@ export function FactionWinRates({
   const handleFactionClick = (factionId: string, factionName: string) => {
     setSelectedFaction({ id: factionId, name: factionName })
     setDialogOpen(true)
+  }
+
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      setSortColumn(column)
+      setSortDirection("desc")
+    }
+  }
+
+  const sortedFactionStats = [...factionStats].sort((a, b) => {
+    let aValue: number | string
+    let bValue: number | string
+
+    switch (sortColumn) {
+      case "name":
+        aValue = a.name.toLowerCase()
+        bValue = b.name.toLowerCase()
+        break
+      case "games":
+        aValue = a.totalGames
+        bValue = b.totalGames
+        break
+      case "wins":
+        aValue = a.wins
+        bValue = b.wins
+        break
+      case "losses":
+        aValue = a.losses
+        bValue = b.losses
+        break
+      case "draws":
+        aValue = a.draws
+        bValue = b.draws
+        break
+      case "winRate":
+        aValue = a.winRate
+        bValue = b.winRate
+        break
+      case "avgScore":
+      default:
+        aValue = a.avgScore
+        bValue = b.avgScore
+        break
+    }
+
+    if (typeof aValue === "string" && typeof bValue === "string") {
+      return sortDirection === "desc" ? bValue.localeCompare(aValue) : aValue.localeCompare(bValue)
+    }
+
+    return sortDirection === "desc" ? (bValue as number) - (aValue as number) : (aValue as number) - (bValue as number)
+  })
+
+  const SortIcon = ({ column }: { column: SortColumn }) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="ml-1 inline h-4 w-4 text-muted-foreground/50" />
+    }
+    return sortDirection === "desc" ? (
+      <ArrowDown className="ml-1 inline h-4 w-4 text-primary" />
+    ) : (
+      <ArrowUp className="ml-1 inline h-4 w-4 text-primary" />
+    )
   }
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -165,15 +245,27 @@ export function FactionWinRates({
               </Select>
             </div>
           </div>
-          <div className="flex items-center gap-2 pt-2">
-            <Checkbox
-              id="show-all-factions"
-              checked={showAllFactions}
-              onCheckedChange={(checked) => setShowAllFactions(checked === true)}
-            />
-            <Label htmlFor="show-all-factions" className="text-xs font-normal cursor-pointer sm:text-sm">
-              Show factions with less than 3 games
-            </Label>
+          <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:gap-4">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="show-all-factions"
+                checked={showAllFactions}
+                onCheckedChange={(checked) => setShowAllFactions(checked === true)}
+              />
+              <Label htmlFor="show-all-factions" className="text-xs font-normal cursor-pointer sm:text-sm">
+                Show factions with less than 3 games
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="exclude-season1"
+                checked={excludeSeason1}
+                onCheckedChange={(checked) => toggleExcludeSeason1(checked === true)}
+              />
+              <Label htmlFor="exclude-season1" className="text-xs font-normal cursor-pointer sm:text-sm">
+                Exclude declassified Killteams
+              </Label>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -187,6 +279,7 @@ export function FactionWinRates({
                     angle={-45}
                     textAnchor="end"
                     height={100}
+                    interval={0}
                     stroke="#e5e7eb"
                     tick={{ fill: "#e5e7eb", fontSize: 12 }}
                   />
@@ -216,24 +309,65 @@ export function FactionWinRates({
             </div>
           )}
 
-          {/* Detailed Stats Table */}
           {factionStats.length > 0 && (
             <div className="mt-6 overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
               <div className="min-w-[600px]">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="pb-2 text-left font-medium text-muted-foreground">Faction</th>
-                      <th className="pb-2 text-right font-medium text-muted-foreground">Games</th>
-                      <th className="pb-2 text-right font-medium text-muted-foreground">Wins</th>
-                      <th className="pb-2 text-right font-medium text-muted-foreground">Losses</th>
-                      <th className="pb-2 text-right font-medium text-muted-foreground">Draws</th>
-                      <th className="pb-2 text-right font-medium text-muted-foreground">Win Rate</th>
-                      <th className="pb-2 text-right font-medium text-muted-foreground">Avg Score</th>
+                      <th
+                        className="cursor-pointer pb-2 text-left font-medium text-muted-foreground hover:text-foreground"
+                        onClick={() => handleSort("name")}
+                      >
+                        Faction
+                        <SortIcon column="name" />
+                      </th>
+                      <th
+                        className="cursor-pointer pb-2 text-right font-medium text-muted-foreground hover:text-foreground"
+                        onClick={() => handleSort("games")}
+                      >
+                        Games
+                        <SortIcon column="games" />
+                      </th>
+                      <th
+                        className="cursor-pointer pb-2 text-right font-medium text-muted-foreground hover:text-foreground"
+                        onClick={() => handleSort("wins")}
+                      >
+                        Wins
+                        <SortIcon column="wins" />
+                      </th>
+                      <th
+                        className="cursor-pointer pb-2 text-right font-medium text-muted-foreground hover:text-foreground"
+                        onClick={() => handleSort("losses")}
+                      >
+                        Losses
+                        <SortIcon column="losses" />
+                      </th>
+                      <th
+                        className="cursor-pointer pb-2 text-right font-medium text-muted-foreground hover:text-foreground"
+                        onClick={() => handleSort("draws")}
+                      >
+                        Draws
+                        <SortIcon column="draws" />
+                      </th>
+                      <th
+                        className="cursor-pointer pb-2 text-right font-medium text-muted-foreground hover:text-foreground"
+                        onClick={() => handleSort("winRate")}
+                      >
+                        Win Rate
+                        <SortIcon column="winRate" />
+                      </th>
+                      <th
+                        className="cursor-pointer pb-2 text-right font-medium text-muted-foreground hover:text-foreground"
+                        onClick={() => handleSort("avgScore")}
+                      >
+                        Avg Score
+                        <SortIcon column="avgScore" />
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {factionStats.map((stat) => (
+                    {sortedFactionStats.map((stat) => (
                       <tr key={stat.name} className="border-b border-border/50">
                         <td className="py-2 font-medium">
                           <div className="flex items-center gap-2">
@@ -262,7 +396,6 @@ export function FactionWinRates({
         </CardContent>
       </Card>
 
-      {/* FactionDetailsDialog */}
       {selectedFaction && (
         <FactionDetailsDialog
           factionId={selectedFaction.id}

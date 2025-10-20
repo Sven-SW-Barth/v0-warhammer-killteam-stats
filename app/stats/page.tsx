@@ -6,7 +6,14 @@ import { StatsFilters } from "@/components/stats-filters"
 export default async function StatsPage({
   searchParams,
 }: {
-  searchParams: { startDate?: string; endDate?: string; country?: string; killzone?: string; critop?: string }
+  searchParams: {
+    startDate?: string
+    endDate?: string
+    country?: string
+    killzone?: string
+    critop?: string
+    excludeSeason1?: string // Added excludeSeason1 param
+  }
 }) {
   const supabase = await createClient()
 
@@ -20,6 +27,7 @@ export default async function StatsPage({
   const countryId = searchParams.country
   const killzoneId = searchParams.killzone
   const critopId = searchParams.critop
+  const excludeSeason1 = searchParams.excludeSeason1 === "true" // Parse excludeSeason1 param
 
   const { data: countries } = await supabase.from("countries").select("id, name").order("name")
   const { data: killzones } = await supabase.from("killzones").select("id, name").order("name")
@@ -30,8 +38,8 @@ export default async function StatsPage({
     .select(
       `
       *,
-      player1_killteam:killteams!games_player1_killteam_id_fkey(id, name, color),
-      player2_killteam:killteams!games_player2_killteam_id_fkey(id, name, color)
+      player1_killteam:killteams!games_player1_killteam_id_fkey(id, name, color, Season),
+      player2_killteam:killteams!games_player2_killteam_id_fkey(id, name, color, Season)
     `,
     )
     .gte("created_at", `${startDate}T00:00:00`)
@@ -51,6 +59,14 @@ export default async function StatsPage({
   }
 
   const { data: games } = await gamesQuery
+
+  const filteredGames = excludeSeason1
+    ? games?.filter((game) => {
+        const killteam1 = game.player1_killteam as { id: string; name: string; color: string; Season: number }
+        const killteam2 = game.player2_killteam as { id: string; name: string; color: string; Season: number }
+        return killteam1.Season !== 1 && killteam2.Season !== 1
+      })
+    : games
 
   let totalGamesQuery = supabase
     .from("games")
@@ -73,7 +89,7 @@ export default async function StatsPage({
   const { count: totalGames } = await totalGamesQuery
 
   const uniquePlayerIds = new Set<string>()
-  games?.forEach((game) => {
+  filteredGames?.forEach((game) => {
     uniquePlayerIds.add(game.player1_id)
     uniquePlayerIds.add(game.player2_id)
   })
@@ -84,9 +100,9 @@ export default async function StatsPage({
     { name: string; wins: number; losses: number; draws: number; totalGames: number; color: string; totalScore: number }
   >()
 
-  games?.forEach((game) => {
-    const killteam1 = game.player1_killteam as { id: string; name: string; color: string }
-    const killteam2 = game.player2_killteam as { id: string; name: string; color: string }
+  filteredGames?.forEach((game) => {
+    const killteam1 = game.player1_killteam as { id: string; name: string; color: string; Season: number }
+    const killteam2 = game.player2_killteam as { id: string; name: string; color: string; Season: number }
 
     const player1Total =
       game.player1_tacop_score +
@@ -153,7 +169,7 @@ export default async function StatsPage({
     .sort((a, b) => b.winRate - a.winRate)
 
   const totalScores =
-    games?.reduce((sum, game) => {
+    filteredGames?.reduce((sum, game) => {
       const p1Total =
         game.player1_tacop_score +
         game.player1_critop_score +
@@ -166,7 +182,7 @@ export default async function StatsPage({
         (game.player2_primary_op_score || 0)
       return sum + p1Total + p2Total
     }, 0) || 0
-  const avgScore = games && games.length > 0 ? totalScores / (games.length * 2) : 0
+  const avgScore = filteredGames && filteredGames.length > 0 ? totalScores / (filteredGames.length * 2) : 0
 
   return (
     <div className="min-h-screen bg-background">

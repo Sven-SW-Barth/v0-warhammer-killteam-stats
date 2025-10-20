@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button"
 import { submitGame } from "@/app/actions"
 import { useRouter } from "next/navigation"
 import { PlayerSearchCombobox } from "@/components/player-search-combobox"
-import { CheckCircle2 } from "lucide-react"
+import { CheckCircle2, Info } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 type ReferenceData = {
   countries: Array<{ id: number; name: string }>
@@ -30,6 +31,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
   const [customMapLayout, setCustomMapLayout] = useState<string>("")
   const [useCustomDate, setUseCustomDate] = useState(false)
   const [customDate, setCustomDate] = useState<string>("")
+  const [selectedCountry, setSelectedCountry] = useState<string>("")
 
   const [player1Scores, setPlayer1Scores] = useState({ tacop: 0, critop: 0, killop: 0 })
   const [player1ScoreErrors, setPlayer1ScoreErrors] = useState({ tacop: false, critop: false, killop: false })
@@ -187,7 +189,71 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
     setShowSuccessScreen(false)
     setSuccess(false)
     setError(null)
+    setSelectedCountry("")
   }
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !selectedCountry) {
+      const locale = navigator.language || "en-US"
+      const countryCode = locale.split("-")[1]?.toUpperCase()
+
+      const countryMap: Record<string, string> = {
+        US: "United States",
+        GB: "United Kingdom",
+        DE: "Germany",
+        FR: "France",
+        ES: "Spain",
+        IT: "Italy",
+        CA: "Canada",
+        AU: "Australia",
+        NZ: "New Zealand",
+        JP: "Japan",
+        CN: "China",
+        BR: "Brazil",
+        MX: "Mexico",
+        AR: "Argentina",
+        CL: "Chile",
+        NL: "Netherlands",
+        BE: "Belgium",
+        SE: "Sweden",
+        NO: "Norway",
+        DK: "Denmark",
+        FI: "Finland",
+        PL: "Poland",
+        CZ: "Czech Republic",
+        AT: "Austria",
+        CH: "Switzerland",
+        PT: "Portugal",
+        GR: "Greece",
+        IE: "Ireland",
+        RU: "Russia",
+        IN: "India",
+        KR: "South Korea",
+        SG: "Singapore",
+        TH: "Thailand",
+        MY: "Malaysia",
+        PH: "Philippines",
+        ID: "Indonesia",
+        VN: "Vietnam",
+        ZA: "South Africa",
+        EG: "Egypt",
+        IL: "Israel",
+        TR: "Turkey",
+        SA: "Saudi Arabia",
+        AE: "United Arab Emirates",
+      }
+
+      const detectedCountryName = countryCode ? countryMap[countryCode] : null
+
+      if (detectedCountryName) {
+        const country = data.countries.find((c) => c.name === detectedCountryName)
+        if (country) {
+          setSelectedCountry(country.id.toString())
+          setFormFields((prev) => ({ ...prev, country: true }))
+        }
+      }
+    }
+  }, [data.countries, selectedCountry])
 
   if (showSuccessScreen) {
     return (
@@ -220,533 +286,565 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
         <CardDescription>Enter the details of your Kill Team battle</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Game Details Section */}
-          <div className="space-y-4 rounded-lg border border-border bg-muted/50 p-4">
-            <h3 className="text-lg font-semibold text-foreground">Game Details</h3>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
-                <Select
-                  name="country"
-                  required
-                  onValueChange={(value) => setFormFields((prev) => ({ ...prev, country: !!value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.countries.map((country) => (
-                      <SelectItem key={country.id} value={country.id.toString()}>
-                        {country.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <TooltipProvider>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Game Details Section */}
+            <div className="space-y-4 rounded-lg border border-border bg-muted/50 p-4">
+              <h3 className="text-lg font-semibold text-foreground">Game Details</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country</Label>
+                  <Select
+                    name="country"
+                    required
+                    value={selectedCountry}
+                    onValueChange={(value) => {
+                      setSelectedCountry(value)
+                      setFormFields((prev) => ({ ...prev, country: !!value }))
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {data.countries.map((country) => (
+                        <SelectItem key={country.id} value={country.id.toString()}>
+                          {country.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="killzone">Killzone</Label>
-                <Select
-                  name="killzone"
-                  required
-                  onValueChange={(value) => setFormFields((prev) => ({ ...prev, killzone: !!value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select killzone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.killzones.map((killzone) => (
-                      <SelectItem key={killzone.id} value={killzone.id.toString()}>
-                        {killzone.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="critop">Critical Operation</Label>
+                  <Select
+                    name="critop"
+                    required
+                    onValueChange={(value) => setFormFields((prev) => ({ ...prev, critop: !!value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select CritOp" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {data.critops.map((critop) => (
+                        <SelectItem key={critop.id} value={critop.id.toString()}>
+                          {critop.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="map_layout_select">
-                  Map Layout <span className="text-muted-foreground text-xs">(Optional)</span>
-                </Label>
-                <Select value={mapLayout} onValueChange={setMapLayout}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select map layout" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="6">6</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
-                  </SelectContent>
-                </Select>
-                {mapLayout === "custom" && (
-                  <Input
-                    placeholder="Enter custom map layout"
-                    value={customMapLayout}
-                    onChange={(e) => setCustomMapLayout(e.target.value)}
-                  />
-                )}
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="killzone">Killzone</Label>
+                  <Select
+                    name="killzone"
+                    required
+                    onValueChange={(value) => setFormFields((prev) => ({ ...prev, killzone: !!value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select killzone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {data.killzones.map((killzone) => (
+                        <SelectItem key={killzone.id} value={killzone.id.toString()}>
+                          {killzone.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="critop">Critical Operation</Label>
-                <Select
-                  name="critop"
-                  required
-                  onValueChange={(value) => setFormFields((prev) => ({ ...prev, critop: !!value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select CritOp" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.critops.map((critop) => (
-                      <SelectItem key={critop.id} value={critop.id.toString()}>
-                        {critop.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="use_custom_date"
-                    checked={useCustomDate}
-                    onChange={(e) => setUseCustomDate(e.target.checked)}
-                    className="h-4 w-4 rounded border-border"
-                  />
-                  <Label htmlFor="use_custom_date" className="text-sm font-normal cursor-pointer">
-                    Set custom game date
+                <div className="space-y-2">
+                  <Label htmlFor="map_layout_select">
+                    Map Layout <span className="text-muted-foreground text-xs">(Optional)</span>
                   </Label>
-                </div>
-                {useCustomDate && (
-                  <div className="space-y-2">
-                    <Label htmlFor="custom_date">Game Date</Label>
-                    <Input
-                      id="custom_date"
-                      type="datetime-local"
-                      value={customDate}
-                      onChange={(e) => setCustomDate(e.target.value)}
-                      max={new Date().toISOString().slice(0, 16)}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* VS illustration between player sections */}
-          <div className="relative grid gap-6 lg:grid-cols-2">
-            <div className="pointer-events-none absolute left-1/2 bottom-6 z-10 hidden -translate-x-1/2 lg:flex">
-              <div className="relative flex items-center justify-center">
-                {/* Left line */}
-                <div className="absolute right-full mr-4 h-1 w-32 bg-gradient-to-r from-transparent to-primary/50" />
-
-                {/* VS Badge */}
-                <div className="relative flex items-center justify-center">
-                  <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-black via-primary/50 to-primary blur-sm" />
-                  <div className="relative rounded-lg border-2 border-primary/50 bg-gradient-to-br from-black via-primary/30 to-primary px-6 py-3">
-                    <span className="text-4xl font-black tracking-wider text-white drop-shadow-[0_2px_8px_rgba(201,106,58,0.5)]">
-                      VS
-                    </span>
-                  </div>
-                </div>
-
-                {/* Right line */}
-                <div className="absolute left-full ml-4 h-1 w-32 bg-gradient-to-l from-transparent to-primary/50" />
-              </div>
-            </div>
-
-            {/* Player 1 Column */}
-            <div className="space-y-4 rounded-lg border border-border bg-muted/50 p-4">
-              <h3 className="text-lg font-semibold text-foreground">Player 1</h3>
-
-              {/* Player 1 Info */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="player1_id">Player</Label>
-                  <PlayerSearchCombobox
-                    value={player1Id}
-                    onValueChange={(value) => {
-                      setPlayer1Id(value)
-                      setFormFields((prev) => ({ ...prev, player1_name: !!value }))
-                    }}
-                    placeholder="Search by name or ID (#123)"
-                    name="player1_id"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="player1_killteam">Kill Team</Label>
-                  <Select
-                    name="player1_killteam"
-                    required
-                    onValueChange={(value) => setFormFields((prev) => ({ ...prev, player1_killteam: !!value }))}
-                  >
+                  <Select value={mapLayout} onValueChange={setMapLayout}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select kill team" />
+                      <SelectValue placeholder="Select map layout" />
                     </SelectTrigger>
                     <SelectContent>
-                      {data.killteams.map((killteam) => (
-                        <SelectItem key={killteam.id} value={killteam.id.toString()}>
-                          {killteam.name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                      <SelectItem value="4">4</SelectItem>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="6">6</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="player1_tacop">Selected TacOp</Label>
-                  <Select
-                    name="player1_tacop"
-                    required
-                    onValueChange={(value) => setFormFields((prev) => ({ ...prev, player1_tacop: !!value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select TacOp" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {data.tacops.map((tacop) => (
-                        <SelectItem key={tacop.id} value={tacop.id.toString()}>
-                          {tacop.name} ({tacop.archetype})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="player1_primary_op">Selected Primary Op</Label>
-                  <Select
-                    name="player1_primary_op"
-                    value={player1PrimaryOp}
-                    onValueChange={(value) => {
-                      setPlayer1PrimaryOp(value)
-                      setFormFields((prev) => ({ ...prev, player1_primary_op: !!value }))
-                    }}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Primary Op" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CritOp">CritOp</SelectItem>
-                      <SelectItem value="TacOp">TacOp</SelectItem>
-                      <SelectItem value="KillOp">KillOp</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Player 1 Scoring */}
-              <div className="space-y-2 pt-4 border-t border-border">
-                <Label className="text-base font-semibold">Scoring</Label>
-                <div className="grid gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="player1_critop_score">CritOp Score (0-6)</Label>
+                  {mapLayout === "custom" && (
                     <Input
-                      id="player1_critop_score"
-                      name="player1_critop_score"
-                      type="number"
-                      min="0"
-                      max="6"
-                      placeholder="0-6"
-                      required
-                      className={player1ScoreErrors.critop ? "border-destructive focus-visible:ring-destructive" : ""}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        const isValid = validateScore(value)
-                        setPlayer1ScoreErrors((prev) => ({ ...prev, critop: !isValid }))
-                        setPlayer1Scores((prev) => ({ ...prev, critop: isValid ? Number(value) : 0 }))
-                        setFormFields((prev) => ({ ...prev, player1_critop_score: isValid }))
-                      }}
+                      placeholder="Enter custom map layout"
+                      value={customMapLayout}
+                      onChange={(e) => setCustomMapLayout(e.target.value)}
                     />
-                    {player1ScoreErrors.critop && (
-                      <p className="text-xs text-destructive">Score must be between 0 and 6</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="player1_tacop_score">TacOp Score (0-6)</Label>
-                    <Input
-                      id="player1_tacop_score"
-                      name="player1_tacop_score"
-                      type="number"
-                      min="0"
-                      max="6"
-                      placeholder="0-6"
-                      required
-                      className={player1ScoreErrors.tacop ? "border-destructive focus-visible:ring-destructive" : ""}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        const isValid = validateScore(value)
-                        setPlayer1ScoreErrors((prev) => ({ ...prev, tacop: !isValid }))
-                        setPlayer1Scores((prev) => ({ ...prev, tacop: isValid ? Number(value) : 0 }))
-                        setFormFields((prev) => ({ ...prev, player1_tacop_score: isValid }))
-                      }}
-                    />
-                    {player1ScoreErrors.tacop && (
-                      <p className="text-xs text-destructive">Score must be between 0 and 6</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="player1_killop_score">KillOp Score (0-6)</Label>
-                    <Input
-                      id="player1_killop_score"
-                      name="player1_killop_score"
-                      type="number"
-                      min="0"
-                      max="6"
-                      placeholder="0-6"
-                      required
-                      className={player1ScoreErrors.killop ? "border-destructive focus-visible:ring-destructive" : ""}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        const isValid = validateScore(value)
-                        setPlayer1ScoreErrors((prev) => ({ ...prev, killop: !isValid }))
-                        setPlayer1Scores((prev) => ({ ...prev, killop: isValid ? Number(value) : 0 }))
-                        setFormFields((prev) => ({ ...prev, player1_killop_score: isValid }))
-                      }}
-                    />
-                    {player1ScoreErrors.killop && (
-                      <p className="text-xs text-destructive">Score must be between 0 and 6</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label>PrimaryOp Score (Auto-calculated)</Label>
-                    <div className="flex h-10 items-center rounded-md border border-input bg-background/50 px-3 text-sm">
-                      {player1PrimaryScore > 0 ? player1PrimaryScore : "-"}
-                    </div>
-                  </div>
+                  )}
                 </div>
-              </div>
 
-              {/* Player 1 Total VP */}
-              <div
-                className={`rounded-lg p-3 text-center transition-colors ${getVPBoxStyle(player1Total, player2Total)}`}
-              >
-                <div className="text-sm text-muted-foreground">Total Victory Points</div>
-                <div className={`text-3xl font-bold ${getVPTextStyle(player1Total, player2Total)}`}>{player1Total}</div>
-              </div>
-            </div>
-
-            {/* Player 2 Column */}
-            <div className="space-y-4 rounded-lg border border-border bg-muted/50 p-4">
-              <h3 className="text-lg font-semibold text-foreground">Player 2</h3>
-
-              {/* Player 2 Info */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="player2_id">Player</Label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="anonymous_opponent"
-                        checked={isAnonymousOpponent}
-                        onChange={(e) => {
-                          setIsAnonymousOpponent(e.target.checked)
-                          if (e.target.checked) {
-                            setPlayer2Id("")
-                            setFormFields((prev) => ({ ...prev, player2_name: true }))
-                          } else {
-                            setFormFields((prev) => ({ ...prev, player2_name: false }))
-                          }
-                        }}
-                        className="h-4 w-4 rounded border-border"
+                <div className="space-y-2 md:col-span-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="use_custom_date"
+                      checked={useCustomDate}
+                      onChange={(e) => setUseCustomDate(e.target.checked)}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <Label htmlFor="use_custom_date" className="text-sm font-normal cursor-pointer">
+                      Set custom game date
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>
+                          Set the time individually when the game was in the past. Otherwise the game will be recorded
+                          at current time.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  {useCustomDate && (
+                    <div className="space-y-2">
+                      <Label htmlFor="custom_date">Game Date</Label>
+                      <Input
+                        id="custom_date"
+                        type="datetime-local"
+                        value={customDate}
+                        onChange={(e) => setCustomDate(e.target.value)}
+                        max={new Date().toISOString().slice(0, 16)}
                       />
-                      <Label htmlFor="anonymous_opponent" className="text-sm font-normal cursor-pointer">
-                        Anonymous opponent
-                      </Label>
                     </div>
-                  </div>
-                  <PlayerSearchCombobox
-                    value={player2Id}
-                    onValueChange={(value) => {
-                      setPlayer2Id(value)
-                      setFormFields((prev) => ({ ...prev, player2_name: !!value }))
-                    }}
-                    placeholder="Search by name or ID (#123)"
-                    name="player2_id"
-                    required={!isAnonymousOpponent}
-                    disabled={isAnonymousOpponent}
-                  />
+                  )}
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="player2_killteam">Kill Team</Label>
-                  <Select
-                    name="player2_killteam"
-                    required
-                    onValueChange={(value) => setFormFields((prev) => ({ ...prev, player2_killteam: !!value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select kill team" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {data.killteams.map((killteam) => (
-                        <SelectItem key={killteam.id} value={killteam.id.toString()}>
-                          {killteam.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="player2_tacop">Selected TacOp</Label>
-                  <Select
-                    name="player2_tacop"
-                    required
-                    onValueChange={(value) => setFormFields((prev) => ({ ...prev, player2_tacop: !!value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select TacOp" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {data.tacops.map((tacop) => (
-                        <SelectItem key={tacop.id} value={tacop.id.toString()}>
-                          {tacop.name} ({tacop.archetype})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="player2_primary_op">Selected Primary Op</Label>
-                  <Select
-                    name="player2_primary_op"
-                    value={player2PrimaryOp}
-                    onValueChange={(value) => {
-                      setPlayer2PrimaryOp(value)
-                      setFormFields((prev) => ({ ...prev, player2_primary_op: !!value }))
-                    }}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Primary Op" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CritOp">CritOp</SelectItem>
-                      <SelectItem value="TacOp">TacOp</SelectItem>
-                      <SelectItem value="KillOp">KillOp</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Player 2 Scoring */}
-              <div className="space-y-2 pt-4 border-t border-border">
-                <Label className="text-base font-semibold">Scoring</Label>
-                <div className="grid gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="player2_critop_score">CritOp Score (0-6)</Label>
-                    <Input
-                      id="player2_critop_score"
-                      name="player2_critop_score"
-                      type="number"
-                      min="0"
-                      max="6"
-                      placeholder="0-6"
-                      required
-                      className={player2ScoreErrors.critop ? "border-destructive focus-visible:ring-destructive" : ""}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        const isValid = validateScore(value)
-                        setPlayer2ScoreErrors((prev) => ({ ...prev, critop: !isValid }))
-                        setPlayer2Scores((prev) => ({ ...prev, critop: isValid ? Number(value) : 0 }))
-                        setFormFields((prev) => ({ ...prev, player2_critop_score: isValid }))
-                      }}
-                    />
-                    {player2ScoreErrors.critop && (
-                      <p className="text-xs text-destructive">Score must be between 0 and 6</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="player2_tacop_score">TacOp Score (0-6)</Label>
-                    <Input
-                      id="player2_tacop_score"
-                      name="player2_tacop_score"
-                      type="number"
-                      min="0"
-                      max="6"
-                      placeholder="0-6"
-                      required
-                      className={player2ScoreErrors.tacop ? "border-destructive focus-visible:ring-destructive" : ""}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        const isValid = validateScore(value)
-                        setPlayer2ScoreErrors((prev) => ({ ...prev, tacop: !isValid }))
-                        setPlayer2Scores((prev) => ({ ...prev, tacop: isValid ? Number(value) : 0 }))
-                        setFormFields((prev) => ({ ...prev, player2_tacop_score: isValid }))
-                      }}
-                    />
-                    {player2ScoreErrors.tacop && (
-                      <p className="text-xs text-destructive">Score must be between 0 and 6</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="player2_killop_score">KillOp Score (0-6)</Label>
-                    <Input
-                      id="player2_killop_score"
-                      name="player2_killop_score"
-                      type="number"
-                      min="0"
-                      max="6"
-                      placeholder="0-6"
-                      required
-                      className={player2ScoreErrors.killop ? "border-destructive focus-visible:ring-destructive" : ""}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        const isValid = validateScore(value)
-                        setPlayer2ScoreErrors((prev) => ({ ...prev, killop: !isValid }))
-                        setPlayer2Scores((prev) => ({ ...prev, killop: isValid ? Number(value) : 0 }))
-                        setFormFields((prev) => ({ ...prev, player2_killop_score: isValid }))
-                      }}
-                    />
-                    {player2ScoreErrors.killop && (
-                      <p className="text-xs text-destructive">Score must be between 0 and 6</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label>PrimaryOp Score (Auto-calculated)</Label>
-                    <div className="flex h-10 items-center rounded-md border border-input bg-background/50 px-3 text-sm">
-                      {player2PrimaryScore > 0 ? player2PrimaryScore : "-"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Player 2 Total VP */}
-              <div
-                className={`rounded-lg p-3 text-center transition-colors ${getVPBoxStyle(player2Total, player1Total)}`}
-              >
-                <div className="text-sm text-muted-foreground">Total Victory Points</div>
-                <div className={`text-3xl font-bold ${getVPTextStyle(player2Total, player1Total)}`}>{player2Total}</div>
               </div>
             </div>
-          </div>
 
-          {error && !success && (
-            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
-          )}
+            {/* VS illustration between player sections */}
+            <div className="relative grid gap-6 lg:grid-cols-2">
+              <div className="pointer-events-none absolute left-1/2 bottom-6 z-10 hidden -translate-x-1/2 lg:flex">
+                <div className="relative flex items-center justify-center">
+                  {/* Left line */}
+                  <div className="absolute right-full mr-4 h-1 w-32 bg-gradient-to-r from-transparent to-primary/50" />
 
-          {success && !error && (
-            <div className="rounded-lg bg-green-500/10 p-3 text-sm text-green-500">Game recorded successfully!</div>
-          )}
+                  {/* VS Badge */}
+                  <div className="relative flex items-center justify-center">
+                    <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-black via-primary/50 to-primary blur-sm" />
+                    <div className="relative rounded-lg border-2 border-primary/50 bg-gradient-to-br from-black via-primary/30 to-primary px-6 py-3">
+                      <span className="text-4xl font-black tracking-wider text-white drop-shadow-[0_2px_8px_rgba(201,106,58,0.5)]">
+                        VS
+                      </span>
+                    </div>
+                  </div>
 
-          <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || !isFormValid}>
-            {isSubmitting ? "Recording Game..." : "Record Game"}
-          </Button>
-        </form>
+                  {/* Right line */}
+                  <div className="absolute left-full ml-4 h-1 w-32 bg-gradient-to-l from-transparent to-primary/50" />
+                </div>
+              </div>
+
+              {/* Player 1 Column */}
+              <div className="space-y-4 rounded-lg border border-border bg-muted/50 p-4">
+                <h3 className="text-lg font-semibold text-foreground">Player 1</h3>
+
+                {/* Player 1 Info */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="player1_id">Player</Label>
+                    <PlayerSearchCombobox
+                      value={player1Id}
+                      onValueChange={(value) => {
+                        setPlayer1Id(value)
+                        setFormFields((prev) => ({ ...prev, player1_name: !!value }))
+                      }}
+                      placeholder="Search by name or ID (#123)"
+                      name="player1_id"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="player1_killteam">Kill Team</Label>
+                    <Select
+                      name="player1_killteam"
+                      required
+                      onValueChange={(value) => setFormFields((prev) => ({ ...prev, player1_killteam: !!value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select kill team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {data.killteams.map((killteam) => (
+                          <SelectItem key={killteam.id} value={killteam.id.toString()}>
+                            {killteam.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="player1_tacop">Selected TacOp</Label>
+                    <Select
+                      name="player1_tacop"
+                      required
+                      onValueChange={(value) => setFormFields((prev) => ({ ...prev, player1_tacop: !!value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select TacOp" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {data.tacops.map((tacop) => (
+                          <SelectItem key={tacop.id} value={tacop.id.toString()}>
+                            {tacop.name} ({tacop.archetype})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="player1_primary_op">Selected Primary Op</Label>
+                    <Select
+                      name="player1_primary_op"
+                      value={player1PrimaryOp}
+                      onValueChange={(value) => {
+                        setPlayer1PrimaryOp(value)
+                        setFormFields((prev) => ({ ...prev, player1_primary_op: !!value }))
+                      }}
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Primary Op" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CritOp">CritOp</SelectItem>
+                        <SelectItem value="TacOp">TacOp</SelectItem>
+                        <SelectItem value="KillOp">KillOp</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Player 1 Scoring */}
+                <div className="space-y-2 pt-4 border-t border-border">
+                  <Label className="text-base font-semibold">Scoring</Label>
+                  <div className="grid gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="player1_critop_score">CritOp Score (0-6)</Label>
+                      <Input
+                        id="player1_critop_score"
+                        name="player1_critop_score"
+                        type="number"
+                        min="0"
+                        max="6"
+                        placeholder="0-6"
+                        required
+                        className={player1ScoreErrors.critop ? "border-destructive focus-visible:ring-destructive" : ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          const isValid = validateScore(value)
+                          setPlayer1ScoreErrors((prev) => ({ ...prev, critop: !isValid }))
+                          setPlayer1Scores((prev) => ({ ...prev, critop: isValid ? Number(value) : 0 }))
+                          setFormFields((prev) => ({ ...prev, player1_critop_score: isValid }))
+                        }}
+                      />
+                      {player1ScoreErrors.critop && (
+                        <p className="text-xs text-destructive">Score must be between 0 and 6</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="player1_tacop_score">TacOp Score (0-6)</Label>
+                      <Input
+                        id="player1_tacop_score"
+                        name="player1_tacop_score"
+                        type="number"
+                        min="0"
+                        max="6"
+                        placeholder="0-6"
+                        required
+                        className={player1ScoreErrors.tacop ? "border-destructive focus-visible:ring-destructive" : ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          const isValid = validateScore(value)
+                          setPlayer1ScoreErrors((prev) => ({ ...prev, tacop: !isValid }))
+                          setPlayer1Scores((prev) => ({ ...prev, tacop: isValid ? Number(value) : 0 }))
+                          setFormFields((prev) => ({ ...prev, player1_tacop_score: isValid }))
+                        }}
+                      />
+                      {player1ScoreErrors.tacop && (
+                        <p className="text-xs text-destructive">Score must be between 0 and 6</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="player1_killop_score">KillOp Score (0-6)</Label>
+                      <Input
+                        id="player1_killop_score"
+                        name="player1_killop_score"
+                        type="number"
+                        min="0"
+                        max="6"
+                        placeholder="0-6"
+                        required
+                        className={player1ScoreErrors.killop ? "border-destructive focus-visible:ring-destructive" : ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          const isValid = validateScore(value)
+                          setPlayer1ScoreErrors((prev) => ({ ...prev, killop: !isValid }))
+                          setPlayer1Scores((prev) => ({ ...prev, killop: isValid ? Number(value) : 0 }))
+                          setFormFields((prev) => ({ ...prev, player1_killop_score: isValid }))
+                        }}
+                      />
+                      {player1ScoreErrors.killop && (
+                        <p className="text-xs text-destructive">Score must be between 0 and 6</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>PrimaryOp Score (Auto-calculated)</Label>
+                      <div className="flex h-10 items-center rounded-md border border-input bg-background/50 px-3 text-sm">
+                        {player1PrimaryScore > 0 ? player1PrimaryScore : "-"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Player 1 Total VP */}
+                <div
+                  className={`rounded-lg p-3 text-center transition-colors ${getVPBoxStyle(player1Total, player2Total)}`}
+                >
+                  <div className="text-sm text-muted-foreground">Total Victory Points</div>
+                  <div className={`text-3xl font-bold ${getVPTextStyle(player1Total, player2Total)}`}>
+                    {player1Total}
+                  </div>
+                </div>
+              </div>
+
+              {/* Player 2 Column */}
+              <div className="space-y-4 rounded-lg border border-border bg-muted/50 p-4">
+                <h3 className="text-lg font-semibold text-foreground">Player 2</h3>
+
+                {/* Player 2 Info */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="player2_id">Player</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="anonymous_opponent"
+                          checked={isAnonymousOpponent}
+                          onChange={(e) => {
+                            setIsAnonymousOpponent(e.target.checked)
+                            if (e.target.checked) {
+                              setPlayer2Id("")
+                              setFormFields((prev) => ({ ...prev, player2_name: true }))
+                            } else {
+                              setFormFields((prev) => ({ ...prev, player2_name: false }))
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-border"
+                        />
+                        <Label htmlFor="anonymous_opponent" className="text-sm font-normal cursor-pointer">
+                          Anonymous opponent
+                        </Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>
+                              If you are uncertain whether the other player consents to having their data uploaded,
+                              please select "Anonymous Opponent" to upload the data in anonymized form.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
+                    <PlayerSearchCombobox
+                      value={player2Id}
+                      onValueChange={(value) => {
+                        setPlayer2Id(value)
+                        setFormFields((prev) => ({ ...prev, player2_name: !!value }))
+                      }}
+                      placeholder="Search by name or ID (#123)"
+                      name="player2_id"
+                      required={!isAnonymousOpponent}
+                      disabled={isAnonymousOpponent}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="player2_killteam">Kill Team</Label>
+                    <Select
+                      name="player2_killteam"
+                      required
+                      onValueChange={(value) => setFormFields((prev) => ({ ...prev, player2_killteam: !!value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select kill team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {data.killteams.map((killteam) => (
+                          <SelectItem key={killteam.id} value={killteam.id.toString()}>
+                            {killteam.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="player2_tacop">Selected TacOp</Label>
+                    <Select
+                      name="player2_tacop"
+                      required
+                      onValueChange={(value) => setFormFields((prev) => ({ ...prev, player2_tacop: !!value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select TacOp" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {data.tacops.map((tacop) => (
+                          <SelectItem key={tacop.id} value={tacop.id.toString()}>
+                            {tacop.name} ({tacop.archetype})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="player2_primary_op">Selected Primary Op</Label>
+                    <Select
+                      name="player2_primary_op"
+                      value={player2PrimaryOp}
+                      onValueChange={(value) => {
+                        setPlayer2PrimaryOp(value)
+                        setFormFields((prev) => ({ ...prev, player2_primary_op: !!value }))
+                      }}
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Primary Op" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CritOp">CritOp</SelectItem>
+                        <SelectItem value="TacOp">TacOp</SelectItem>
+                        <SelectItem value="KillOp">KillOp</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Player 2 Scoring */}
+                <div className="space-y-2 pt-4 border-t border-border">
+                  <Label className="text-base font-semibold">Scoring</Label>
+                  <div className="grid gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="player2_critop_score">CritOp Score (0-6)</Label>
+                      <Input
+                        id="player2_critop_score"
+                        name="player2_critop_score"
+                        type="number"
+                        min="0"
+                        max="6"
+                        placeholder="0-6"
+                        required
+                        className={player2ScoreErrors.critop ? "border-destructive focus-visible:ring-destructive" : ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          const isValid = validateScore(value)
+                          setPlayer2ScoreErrors((prev) => ({ ...prev, critop: !isValid }))
+                          setPlayer2Scores((prev) => ({ ...prev, critop: isValid ? Number(value) : 0 }))
+                          setFormFields((prev) => ({ ...prev, player2_critop_score: isValid }))
+                        }}
+                      />
+                      {player2ScoreErrors.critop && (
+                        <p className="text-xs text-destructive">Score must be between 0 and 6</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="player2_tacop_score">TacOp Score (0-6)</Label>
+                      <Input
+                        id="player2_tacop_score"
+                        name="player2_tacop_score"
+                        type="number"
+                        min="0"
+                        max="6"
+                        placeholder="0-6"
+                        required
+                        className={player2ScoreErrors.tacop ? "border-destructive focus-visible:ring-destructive" : ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          const isValid = validateScore(value)
+                          setPlayer2ScoreErrors((prev) => ({ ...prev, tacop: !isValid }))
+                          setPlayer2Scores((prev) => ({ ...prev, tacop: isValid ? Number(value) : 0 }))
+                          setFormFields((prev) => ({ ...prev, player2_tacop_score: isValid }))
+                        }}
+                      />
+                      {player2ScoreErrors.tacop && (
+                        <p className="text-xs text-destructive">Score must be between 0 and 6</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="player2_killop_score">KillOp Score (0-6)</Label>
+                      <Input
+                        id="player2_killop_score"
+                        name="player2_killop_score"
+                        type="number"
+                        min="0"
+                        max="6"
+                        placeholder="0-6"
+                        required
+                        className={player2ScoreErrors.killop ? "border-destructive focus-visible:ring-destructive" : ""}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          const isValid = validateScore(value)
+                          setPlayer2ScoreErrors((prev) => ({ ...prev, killop: !isValid }))
+                          setPlayer2Scores((prev) => ({ ...prev, killop: isValid ? Number(value) : 0 }))
+                          setFormFields((prev) => ({ ...prev, player2_killop_score: isValid }))
+                        }}
+                      />
+                      {player2ScoreErrors.killop && (
+                        <p className="text-xs text-destructive">Score must be between 0 and 6</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>PrimaryOp Score (Auto-calculated)</Label>
+                      <div className="flex h-10 items-center rounded-md border border-input bg-background/50 px-3 text-sm">
+                        {player2PrimaryScore > 0 ? player2PrimaryScore : "-"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Player 2 Total VP */}
+                <div
+                  className={`rounded-lg p-3 text-center transition-colors ${getVPBoxStyle(player2Total, player1Total)}`}
+                >
+                  <div className="text-sm text-muted-foreground">Total Victory Points</div>
+                  <div className={`text-3xl font-bold ${getVPTextStyle(player2Total, player1Total)}`}>
+                    {player2Total}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {error && !success && (
+              <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+            )}
+
+            {success && !error && (
+              <div className="rounded-lg bg-green-500/10 p-3 text-sm text-green-500">Game recorded successfully!</div>
+            )}
+
+            <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || !isFormValid}>
+              {isSubmitting ? "Recording Game..." : "Record Game"}
+            </Button>
+          </form>
+        </TooltipProvider>
       </CardContent>
     </Card>
   )

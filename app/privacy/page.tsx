@@ -77,8 +77,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="mb-3 text-xl font-semibold">Contact</h2>
               <p className="text-muted-foreground">
-                If you have any questions, concerns, or feedback about this website, please feel free to open an issue
-                on the GitHub repository or contact the maintainer through GitHub.
+                If you have any questions, concerns, or feedback about this website, please feel free to open an issue on the GitHub repository or contact the maintainer through GitHub or write me a message on discord: stickon2        
               </p>
             </section>
 

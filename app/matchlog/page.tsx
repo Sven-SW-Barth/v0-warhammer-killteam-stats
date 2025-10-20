@@ -1,12 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/server"
 import { MatchlogItem } from "@/components/matchlog-item"
-import { StatsFilters } from "@/components/stats-filters"
+import { MatchlogFilters } from "@/components/matchlog-filters"
 
 export default async function MatchlogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ startDate?: string; endDate?: string; country?: string }>
+  searchParams: Promise<{ startDate?: string; endDate?: string; country?: string; player?: string }>
 }) {
   const supabase = await createClient()
   const params = await searchParams
@@ -18,6 +18,7 @@ export default async function MatchlogPage({
   const startDate = params.startDate ? new Date(params.startDate) : sixMonthsAgo
   const endDate = params.endDate ? new Date(params.endDate) : today
   const countryId = params.country
+  const playerId = params.player
 
   const { data: countries } = await supabase.from("countries").select("id, name").order("name")
 
@@ -44,6 +45,10 @@ export default async function MatchlogPage({
     query = query.eq("country_id", countryId)
   }
 
+  if (playerId) {
+    query = query.or(`player1_id.eq.${playerId},player2_id.eq.${playerId}`)
+  }
+
   const { data: games } = await query.order("created_at", { ascending: false })
 
   return (
@@ -58,7 +63,7 @@ export default async function MatchlogPage({
           </p>
         </header>
 
-        <StatsFilters countries={countries || []} />
+        <MatchlogFilters countries={countries || []} />
 
         <Card>
           <CardHeader>
