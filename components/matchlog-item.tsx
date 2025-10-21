@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { format } from "date-fns"
 import { ChevronDown, ChevronRight } from "lucide-react"
+import { GameActionsMenu } from "./game-actions-menu"
 
 type Game = {
   id: string
@@ -52,74 +53,80 @@ export function MatchlogItem({ game }: { game: Game }) {
   return (
     <div className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/50">
       {/* Collapsed View */}
-      <button onClick={() => setIsExpanded(!isExpanded)} className="w-full p-4 text-left">
-        {/* Mobile: Stacked layout */}
-        <div className="flex items-start gap-3 sm:hidden">
-          <div className="flex-shrink-0 pt-1">
-            {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-          </div>
-          <div className="flex flex-1 flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="font-medium text-sm">{game.player1?.playertag || "Unknown"}</span>
-                <span className="text-xs text-muted-foreground">({game.player1_killteam?.name || "Unknown"})</span>
+      <div className="flex items-center gap-2">
+        <button onClick={() => setIsExpanded(!isExpanded)} className="flex-1 p-4 text-left">
+          {/* Mobile: Stacked layout */}
+          <div className="flex items-start gap-3 sm:hidden">
+            <div className="flex-shrink-0 pt-1">
+              {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+            </div>
+            <div className="flex flex-1 flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="font-medium text-sm">{game.player1?.playertag || "Unknown"}</span>
+                  <span className="text-xs text-muted-foreground">({game.player1_killteam?.name || "Unknown"})</span>
+                </div>
+                <span className={`text-xl font-bold tabular-nums ${getResultColor(player1Total, player2Total)}`}>
+                  {player1Total}
+                </span>
               </div>
-              <span className={`text-xl font-bold tabular-nums ${getResultColor(player1Total, player2Total)}`}>
+              <div className="text-center text-xs text-muted-foreground">vs</div>
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="font-medium text-sm">{game.player2?.playertag || "Unknown"}</span>
+                  <span className="text-xs text-muted-foreground">({game.player2_killteam?.name || "Unknown"})</span>
+                </div>
+                <span className={`text-xl font-bold tabular-nums ${getResultColor(player2Total, player1Total)}`}>
+                  {player2Total}
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground text-center mt-1">
+                {format(new Date(game.created_at), "MMM d, yyyy")}
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop: Horizontal layout with proper spacing */}
+          <div className="hidden sm:flex items-center gap-6 w-full">
+            {/* Chevron Icon */}
+            <div className="flex-shrink-0">
+              {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+            </div>
+
+            {/* Player 1 - Left aligned */}
+            <div className="flex flex-col items-start min-w-[180px]">
+              <span className="font-semibold text-base">{game.player1?.playertag || "Unknown"}</span>
+              <span className="text-sm text-muted-foreground">{game.player1_killteam?.name || "Unknown"}</span>
+            </div>
+
+            {/* Scores - Centered */}
+            <div className="flex items-center justify-center gap-4 flex-1">
+              <span className={`text-3xl font-bold tabular-nums ${getResultColor(player1Total, player2Total)}`}>
                 {player1Total}
               </span>
-            </div>
-            <div className="text-center text-xs text-muted-foreground">vs</div>
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="font-medium text-sm">{game.player2?.playertag || "Unknown"}</span>
-                <span className="text-xs text-muted-foreground">({game.player2_killteam?.name || "Unknown"})</span>
-              </div>
-              <span className={`text-xl font-bold tabular-nums ${getResultColor(player2Total, player1Total)}`}>
+              <span className="text-muted-foreground text-sm">vs</span>
+              <span className={`text-3xl font-bold tabular-nums ${getResultColor(player2Total, player1Total)}`}>
                 {player2Total}
               </span>
             </div>
-            <div className="text-xs text-muted-foreground text-center mt-1">
+
+            {/* Player 2 - Right aligned */}
+            <div className="flex flex-col items-end min-w-[180px]">
+              <span className="font-semibold text-base">{game.player2?.playertag || "Player 2"}</span>
+              <span className="text-sm text-muted-foreground">{game.player2_killteam?.name || "Unknown"}</span>
+            </div>
+
+            {/* Date */}
+            <div className="text-sm text-muted-foreground whitespace-nowrap min-w-[100px] text-right">
               {format(new Date(game.created_at), "MMM d, yyyy")}
             </div>
           </div>
+        </button>
+
+        <div className="pr-4">
+          <GameActionsMenu game={game} />
         </div>
-
-        {/* Desktop: Horizontal layout with proper spacing */}
-        <div className="hidden sm:flex items-center gap-6 w-full">
-          {/* Chevron Icon */}
-          <div className="flex-shrink-0">
-            {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-          </div>
-
-          {/* Player 1 - Left aligned */}
-          <div className="flex flex-col items-start min-w-[180px]">
-            <span className="font-semibold text-base">{game.player1?.playertag || "Unknown"}</span>
-            <span className="text-sm text-muted-foreground">{game.player1_killteam?.name || "Unknown"}</span>
-          </div>
-
-          {/* Scores - Centered */}
-          <div className="flex items-center justify-center gap-4 flex-1">
-            <span className={`text-3xl font-bold tabular-nums ${getResultColor(player1Total, player2Total)}`}>
-              {player1Total}
-            </span>
-            <span className="text-muted-foreground text-sm">vs</span>
-            <span className={`text-3xl font-bold tabular-nums ${getResultColor(player2Total, player1Total)}`}>
-              {player2Total}
-            </span>
-          </div>
-
-          {/* Player 2 - Right aligned */}
-          <div className="flex flex-col items-end min-w-[180px]">
-            <span className="font-semibold text-base">{game.player2?.playertag || "Player 2"}</span>
-            <span className="text-sm text-muted-foreground">{game.player2_killteam?.name || "Unknown"}</span>
-          </div>
-
-          {/* Date */}
-          <div className="text-sm text-muted-foreground whitespace-nowrap min-w-[100px] text-right">
-            {format(new Date(game.created_at), "MMM d, yyyy")}
-          </div>
-        </div>
-      </button>
+      </div>
 
       {/* Expanded View */}
       {isExpanded && (

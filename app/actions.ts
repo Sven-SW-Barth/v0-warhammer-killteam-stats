@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 
 export async function submitGame(formData: FormData) {
@@ -179,5 +180,205 @@ export async function submitGame(formData: FormData) {
   } catch (error) {
     console.error("[v0] Error submitting game:", error)
     return { error: "Failed to record game. Please try again." }
+  }
+}
+
+export async function submitDeletionReport(data: {
+  gameId: number
+  reporterName: string
+  reason: string
+  explanation: string
+}) {
+  const supabase = await createClient()
+
+  try {
+    const { error } = await supabase.from("deletion_reports").insert({
+      game_id: data.gameId,
+      reporter_name: data.reporterName,
+      reason: data.reason,
+      explanation: data.explanation,
+      status: "pending",
+    })
+
+    if (error) throw error
+
+    revalidatePath("/admin")
+
+    return { success: true }
+  } catch (error) {
+    console.error("[v0] Error submitting deletion report:", error)
+    return { error: "Failed to submit deletion report. Please try again." }
+  }
+}
+
+export async function submitEditReport(data: {
+  gameId: number
+  reporterName: string
+  proposedChanges: Record<string, number>
+}) {
+  const supabase = await createClient()
+
+  try {
+    const { error } = await supabase.from("edit_reports").insert({
+      game_id: data.gameId,
+      reporter_name: data.reporterName,
+      proposed_changes: data.proposedChanges,
+      status: "pending",
+    })
+
+    if (error) throw error
+
+    revalidatePath("/admin")
+
+    return { success: true }
+  } catch (error) {
+    console.error("[v0] Error submitting edit report:", error)
+    return { error: "Failed to submit edit report. Please try again." }
+  }
+}
+
+export async function approveDeletionReport(reportId: number) {
+  const supabase = createAdminClient()
+
+  try {
+    console.log("[SERVER][v0] Fetching deletion report:", reportId)
+
+    // Get the report
+    const { data: report, error: fetchError } = await supabase
+      .from("deletion_reports")
+      .select("game_id")
+      .eq("id", reportId)
+      .single()
+
+    if (fetchError) {
+      console.error("[SERVER][v0] Error fetching report:", fetchError)
+      throw fetchError
+    }
+
+    console.log("[SERVER][v0] Deleting game:", report.game_id)
+
+    // Delete the game
+    const { error: deleteError } = await supabase.from("games").delete().eq("id", report.game_id)
+
+    if (deleteError) {
+      console.error("[SERVER][v0] Error deleting game:", deleteError)
+      throw deleteError
+    }
+
+    console.log("[SERVER][v0] Updating report status to approved")
+
+    // Update report status
+    const { error: updateError } = await supabase
+      .from("deletion_reports")
+      .update({ status: "approved" })
+      .eq("id", reportId)
+
+    if (updateError) {
+      console.error("[SERVER][v0] Error updating report status:", updateError)
+      throw updateError
+    }
+
+    console.log("[SERVER][v0] Deletion report approved successfully")
+
+    revalidatePath("/admin")
+    revalidatePath("/matchlog")
+    revalidatePath("/stats")
+    revalidatePath("/leaderboards")
+
+    return { success: true }
+  } catch (error) {
+    console.error("[SERVER][v0] Error approving deletion report:", error)
+    return { error: "Failed to approve deletion report. Please try again." }
+  }
+}
+
+export async function rejectDeletionReport(reportId: number) {
+  const supabase = await createClient()
+
+  try {
+    const { error } = await supabase.from("deletion_reports").update({ status: "rejected" }).eq("id", reportId)
+
+    if (error) throw error
+
+    revalidatePath("/admin")
+
+    return { success: true }
+  } catch (error) {
+    console.error("[v0] Error rejecting deletion report:", error)
+    return { error: "Failed to reject deletion report. Please try again." }
+  }
+}
+
+export async function approveEditReport(reportId: number) {
+  const supabase = createAdminClient()
+
+  try {
+    console.log("[SERVER][v0] Fetching edit report:", reportId)
+
+    // Get the report
+    const { data: report, error: fetchError } = await supabase
+      .from("edit_reports")
+      .select("game_id, proposed_changes")
+      .eq("id", reportId)
+      .single()
+
+    if (fetchError) {
+      console.error("[SERVER][v0] Error fetching report:", fetchError)
+      throw fetchError
+    }
+
+    console.log("[SERVER][v0] Updating game:", report.game_id, "with changes:", report.proposed_changes)
+
+    // Update the game with proposed changes
+    const { error: updateError, data: updateData } = await supabase
+      .from("games")
+      .update(report.proposed_changes)
+      .eq("id", report.game_id)
+      .select()
+
+    if (updateError) {
+      console.error("[SERVER][v0] Error updating game:", updateError)
+      throw updateError
+    }
+
+    console.log("[SERVER][v0] Game updated successfully:", updateData)
+    console.log("[SERVER][v0] Updating report status to approved")
+
+    // Update report status
+    const { error: statusError } = await supabase.from("edit_reports").update({ status: "approved" }).eq("id", reportId)
+
+    if (statusError) {
+      console.error("[SERVER][v0] Error updating report status:", statusError)
+      throw statusError
+    }
+
+    console.log("[SERVER][v0] Edit report approved successfully")
+
+    revalidatePath("/admin")
+    revalidatePath("/matchlog")
+    revalidatePath("/stats")
+    revalidatePath("/leaderboards")
+
+    return { success: true }
+  } catch (error) {
+    console.error("[SERVER][v0] Error approving edit report:", error)
+    return { error: "Failed to approve edit report. Please try again." }
+  }
+}
+
+export async function rejectEditReport(reportId: number) {
+  const supabase = await createClient()
+
+  try {
+    const { error } = await supabase.from("edit_reports").update({ status: "rejected" }).eq("id", reportId)
+
+    if (error) throw error
+
+    revalidatePath("/admin")
+
+    return { success: true }
+  } catch (error) {
+    console.error("[v0] Error rejecting edit report:", error)
+    return { error: "Failed to reject edit report. Please try again." }
   }
 }

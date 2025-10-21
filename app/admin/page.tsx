@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Shield, Lock, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AdminReportsTables } from "@/components/admin-reports-tables"
+import { createClient } from "@/lib/supabase/client"
 
 export default function AdminPage() {
   const [password, setPassword] = useState("")
@@ -19,13 +21,63 @@ export default function AdminPage() {
     type: "success" | "error"
     message: string
   } | null>(null)
+  const [deletionReports, setDeletionReports] = useState<any[]>([])
+  const [editReports, setEditReports] = useState<any[]>([])
+  const [isLoadingReports, setIsLoadingReports] = useState(false)
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const isAuth = sessionStorage.getItem("admin_authenticated") === "true"
       setIsAuthenticated(isAuth)
+      if (isAuth) {
+        loadReports()
+      }
     }
   }, [])
+
+  const loadReports = async () => {
+    setIsLoadingReports(true)
+    try {
+      const supabase = createClient()
+
+      const { data: deletions, error: deletionError } = await supabase
+        .from("deletion_reports")
+        .select(`
+          *,
+          game:games(
+            player1:players!games_player1_id_fkey(playertag),
+            player2:players!games_player2_id_fkey(playertag)
+          )
+        `)
+        .order("created_at", { ascending: false })
+
+      if (deletionError) {
+        console.error("[v0] Error loading deletion reports:", deletionError)
+      }
+
+      const { data: edits, error: editError } = await supabase
+        .from("edit_reports")
+        .select(`
+          *,
+          game:games(
+            player1:players!games_player1_id_fkey(playertag),
+            player2:players!games_player2_id_fkey(playertag)
+          )
+        `)
+        .order("created_at", { ascending: false })
+
+      if (editError) {
+        console.error("[v0] Error loading edit reports:", editError)
+      }
+
+      setDeletionReports(deletions || [])
+      setEditReports(edits || [])
+    } catch (error) {
+      console.error("[v0] Error loading reports:", error)
+    } finally {
+      setIsLoadingReports(false)
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,6 +98,7 @@ export default function AdminPage() {
         if (typeof window !== "undefined") {
           sessionStorage.setItem("admin_authenticated", "true")
         }
+        loadReports()
       } else {
         setError("Invalid password")
       }
@@ -151,6 +204,18 @@ export default function AdminPage() {
       </div>
 
       <div className="space-y-6">
+        {isLoadingReports ? (
+          <Card className="p-6">
+            <p className="text-center text-muted-foreground">Loading reports...</p>
+          </Card>
+        ) : (
+          <AdminReportsTables
+            deletionReports={deletionReports}
+            editReports={editReports}
+            onReportsChange={loadReports}
+          />
+        )}
+
         <Card className="p-6">
           <div className="mb-4">
             <h2 className="text-xl font-semibold">ELO Rating System</h2>
