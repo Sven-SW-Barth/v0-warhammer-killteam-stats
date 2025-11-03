@@ -115,6 +115,15 @@ export function EditReportDialog({
     setIsSubmitting(true)
 
     try {
+      console.log("[v0] Edit report form data:", {
+        player1Id,
+        player2Id,
+        gameDate,
+        critopId,
+        killzoneId,
+        mapLayout,
+      })
+
       const proposedChanges: Record<string, any> = {
         player1_tacop_score: p1TacOpScore,
         player1_critop_score: p1CritOpScore,
@@ -134,6 +143,8 @@ export function EditReportDialog({
       if (killzoneId !== game.killzone?.id) proposedChanges.killzone_id = killzoneId
       if (mapLayout !== game.map_layout) proposedChanges.map_layout = mapLayout
 
+      console.log("[v0] Proposed changes:", proposedChanges)
+
       const result = await submitEditReport({
         gameId: Number.parseInt(game.id),
         reporterName,
@@ -148,6 +159,7 @@ export function EditReportDialog({
         toast.error(result.error || "Failed to submit edit report")
       }
     } catch (error) {
+      console.error("[v0] Error submitting edit report:", error)
       toast.error("An error occurred while submitting the report")
     } finally {
       setIsSubmitting(false)
@@ -193,9 +205,12 @@ export function EditReportDialog({
                       <SelectValue placeholder="Select layout" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Close Quarters">Close Quarters</SelectItem>
-                      <SelectItem value="Killzone">Killzone</SelectItem>
-                      <SelectItem value="Tac Ops">Tac Ops</SelectItem>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                      <SelectItem value="4">4</SelectItem>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="6">6</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -240,10 +255,13 @@ export function EditReportDialog({
                 <div className="space-y-2">
                   <Label>Player 1</Label>
                   <PlayerSearchCombobox
-                    players={players}
-                    selectedPlayerId={player1Id}
-                    onPlayerSelect={setPlayer1Id}
+                    value={player1Id?.toString() || ""}
+                    onValueChange={(value) => {
+                      console.log("[v0] Player 1 value changed:", value)
+                      setPlayer1Id(value ? Number(value) : null)
+                    }}
                     placeholder="Select player 1"
+                    name="player1"
                     allowCreate={true}
                   />
                 </div>
@@ -311,10 +329,13 @@ export function EditReportDialog({
                 <div className="space-y-2">
                   <Label>Player 2</Label>
                   <PlayerSearchCombobox
-                    players={players}
-                    selectedPlayerId={player2Id}
-                    onPlayerSelect={setPlayer2Id}
+                    value={player2Id?.toString() || ""}
+                    onValueChange={(value) => {
+                      console.log("[v0] Player 2 value changed:", value)
+                      setPlayer2Id(value ? Number(value) : null)
+                    }}
                     placeholder="Select player 2"
+                    name="player2"
                     allowCreate={true}
                   />
                 </div>
