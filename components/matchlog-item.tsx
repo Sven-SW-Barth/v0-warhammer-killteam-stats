@@ -137,6 +137,10 @@ export function MatchlogItem({ game }: { game: Game }) {
               <h4 className="font-semibold text-foreground">Game Details</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
+                  <span className="text-muted-foreground">Game ID:</span>
+                  <span className="font-medium font-mono">{game.id}</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Country:</span>
                   <span className="font-medium">{game.country?.name || "Unknown"}</span>
                 </div>

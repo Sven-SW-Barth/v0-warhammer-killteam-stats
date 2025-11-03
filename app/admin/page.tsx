@@ -229,6 +229,7 @@ export default function AdminPage() {
                 <li>• Resets all player ELO ratings to 1200 (starting value)</li>
                 <li>• Processes all games in chronological order</li>
                 <li>• Calculates ELO changes using standard ELO formula</li>
+                <li>• Excludes games against Anonymous players from ELO calculations</li>
                 <li>• Updates player ratings and game records</li>
                 <li>• Uses adaptive K-factor based on games played</li>
               </ul>

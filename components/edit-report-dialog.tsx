@@ -7,13 +7,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { submitEditReport } from "@/app/actions"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { PlayerSearchCombobox } from "@/components/player-search-combobox"
+import { createClient } from "@/lib/supabase/client"
 
 type Game = {
   id: string
   map_layout: string | null
+  created_at: string
   player1_tacop_score: number
   player1_critop_score: number
   player1_killop_score: number
@@ -47,21 +51,54 @@ export function EditReportDialog({
   const [reporterName, setReporterName] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Player 1 scores
+  const [player1Id, setPlayer1Id] = useState<number | null>(game.player1?.id || null)
+  const [player2Id, setPlayer2Id] = useState<number | null>(game.player2?.id || null)
+  const [gameDate, setGameDate] = useState(game.created_at.split("T")[0])
+  const [critopId, setCritopId] = useState<number | null>(game.critop?.id || null)
+  const [killzoneId, setKillzoneId] = useState<number | null>(game.killzone?.id || null)
+  const [mapLayout, setMapLayout] = useState(game.map_layout || "")
+
+  const [players, setPlayers] = useState<Array<{ id: number; playertag: string }>>([])
+  const [critops, setCritops] = useState<Array<{ id: number; name: string }>>([])
+  const [killzones, setKillzones] = useState<Array<{ id: number; name: string }>>([])
+
+  // Player scores
   const [p1TacOpScore, setP1TacOpScore] = useState(game.player1_tacop_score)
   const [p1CritOpScore, setP1CritOpScore] = useState(game.player1_critop_score)
   const [p1KillOpScore, setP1KillOpScore] = useState(game.player1_killop_score)
   const [p1PrimaryOpScore, setP1PrimaryOpScore] = useState(game.player1_primary_op_score || 0)
 
-  // Player 2 scores
   const [p2TacOpScore, setP2TacOpScore] = useState(game.player2_tacop_score)
   const [p2CritOpScore, setP2CritOpScore] = useState(game.player2_critop_score)
   const [p2KillOpScore, setP2KillOpScore] = useState(game.player2_killop_score)
   const [p2PrimaryOpScore, setP2PrimaryOpScore] = useState(game.player2_primary_op_score || 0)
 
+  useEffect(() => {
+    const fetchData = async () => {
+      const supabase = createClient()
+      const [playersRes, critopsRes, killzonesRes] = await Promise.all([
+        supabase.from("players").select("id, playertag").order("playertag"),
+        supabase.from("critops").select("id, name").order("name"),
+        supabase.from("killzones").select("id, name").order("name"),
+      ])
+
+      if (playersRes.data) setPlayers(playersRes.data)
+      if (critopsRes.data) setCritops(critopsRes.data)
+      if (killzonesRes.data) setKillzones(killzonesRes.data)
+    }
+
+    fetchData()
+  }, [])
+
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
+      setPlayer1Id(game.player1?.id || null)
+      setPlayer2Id(game.player2?.id || null)
+      setGameDate(game.created_at.split("T")[0])
+      setCritopId(game.critop?.id || null)
+      setKillzoneId(game.killzone?.id || null)
+      setMapLayout(game.map_layout || "")
       setP1TacOpScore(game.player1_tacop_score)
       setP1CritOpScore(game.player1_critop_score)
       setP1KillOpScore(game.player1_killop_score)
@@ -78,7 +115,7 @@ export function EditReportDialog({
     setIsSubmitting(true)
 
     try {
-      const proposedChanges = {
+      const proposedChanges: Record<string, any> = {
         player1_tacop_score: p1TacOpScore,
         player1_critop_score: p1CritOpScore,
         player1_killop_score: p1KillOpScore,
@@ -88,6 +125,14 @@ export function EditReportDialog({
         player2_killop_score: p2KillOpScore,
         player2_primary_op_score: p2PrimaryOpScore,
       }
+
+      // Add new fields if they changed
+      if (player1Id !== game.player1?.id) proposedChanges.player1_id = player1Id
+      if (player2Id !== game.player2?.id) proposedChanges.player2_id = player2Id
+      if (gameDate !== game.created_at.split("T")[0]) proposedChanges.created_at = gameDate
+      if (critopId !== game.critop?.id) proposedChanges.critop_id = critopId
+      if (killzoneId !== game.killzone?.id) proposedChanges.killzone_id = killzoneId
+      if (mapLayout !== game.map_layout) proposedChanges.map_layout = mapLayout
 
       const result = await submitEditReport({
         gameId: Number.parseInt(game.id),
@@ -109,9 +154,12 @@ export function EditReportDialog({
     }
   }
 
+  const selectedPlayer1 = players.find((p) => p.id === player1Id)
+  const selectedPlayer2 = players.find((p) => p.id === player2Id)
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh]">
+      <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Report Game Edit</DialogTitle>
         </DialogHeader>
@@ -129,11 +177,79 @@ export function EditReportDialog({
               />
             </div>
 
+            <div className="space-y-4 rounded-lg border p-4 bg-muted/50">
+              <h3 className="font-semibold">Game Details</h3>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="game-date">Date</Label>
+                  <Input id="game-date" type="date" value={gameDate} onChange={(e) => setGameDate(e.target.value)} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="map-layout">Map Layout</Label>
+                  <Select value={mapLayout} onValueChange={setMapLayout}>
+                    <SelectTrigger id="map-layout">
+                      <SelectValue placeholder="Select layout" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Close Quarters">Close Quarters</SelectItem>
+                      <SelectItem value="Killzone">Killzone</SelectItem>
+                      <SelectItem value="Tac Ops">Tac Ops</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="critop">Critical Operation</Label>
+                  <Select value={critopId?.toString() || ""} onValueChange={(v) => setCritopId(Number(v))}>
+                    <SelectTrigger id="critop">
+                      <SelectValue placeholder="Select CritOp" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {critops.map((critop) => (
+                        <SelectItem key={critop.id} value={critop.id.toString()}>
+                          {critop.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="killzone">Killzone (Map)</Label>
+                  <Select value={killzoneId?.toString() || ""} onValueChange={(v) => setKillzoneId(Number(v))}>
+                    <SelectTrigger id="killzone">
+                      <SelectValue placeholder="Select killzone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {killzones.map((killzone) => (
+                        <SelectItem key={killzone.id} value={killzone.id.toString()}>
+                          {killzone.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
             <div className="grid gap-6 md:grid-cols-2">
-              {/* Player 1 Scores */}
+              {/* Player 1 Section */}
               <div className="space-y-4 rounded-lg border p-4">
+                <div className="space-y-2">
+                  <Label>Player 1</Label>
+                  <PlayerSearchCombobox
+                    players={players}
+                    selectedPlayerId={player1Id}
+                    onPlayerSelect={setPlayer1Id}
+                    placeholder="Select player 1"
+                    allowCreate={true}
+                  />
+                </div>
+
                 <h3 className="font-semibold">
-                  {game.player1?.playertag || "Player 1"} - {game.player1_killteam?.name || "Unknown"}
+                  {selectedPlayer1?.playertag || "Player 1"} - {game.player1_killteam?.name || "Unknown"}
                 </h3>
 
                 <div className="space-y-3">
@@ -190,10 +306,21 @@ export function EditReportDialog({
                 </div>
               </div>
 
-              {/* Player 2 Scores */}
+              {/* Player 2 Section */}
               <div className="space-y-4 rounded-lg border p-4">
+                <div className="space-y-2">
+                  <Label>Player 2</Label>
+                  <PlayerSearchCombobox
+                    players={players}
+                    selectedPlayerId={player2Id}
+                    onPlayerSelect={setPlayer2Id}
+                    placeholder="Select player 2"
+                    allowCreate={true}
+                  />
+                </div>
+
                 <h3 className="font-semibold">
-                  {game.player2?.playertag || "Player 2"} - {game.player2_killteam?.name || "Unknown"}
+                  {selectedPlayer2?.playertag || "Player 2"} - {game.player2_killteam?.name || "Unknown"}
                 </h3>
 
                 <div className="space-y-3">

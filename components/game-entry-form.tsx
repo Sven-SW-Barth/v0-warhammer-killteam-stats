@@ -658,6 +658,9 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
                               If you are uncertain whether the other player consents to having their data uploaded,
                               please select "Anonymous Opponent" to upload the data in anonymized form.
                             </p>
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              Note: Games against anonymous opponents are excluded from ELO calculations.
+                            </p>
                           </TooltipContent>
                         </Tooltip>
                       </div>

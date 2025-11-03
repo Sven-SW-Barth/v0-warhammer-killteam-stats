@@ -34,10 +34,14 @@ export async function POST() {
       return NextResponse.json({ success: false, error: clearError.message }, { status: 500 })
     }
 
-    // Step 3: Fetch all games in chronological order
+    // Step 3: Fetch all games with player information in chronological order
     const { data: games, error: gamesError } = await supabase
       .from("games")
-      .select("*")
+      .select(`
+        *,
+        player1:players!player1_id(id, playertag),
+        player2:players!player2_id(id, playertag)
+      `)
       .order("created_at", { ascending: true })
 
     if (gamesError || !games) {
@@ -49,7 +53,19 @@ export async function POST() {
     const playerElos = new Map<number, number>()
     const playerGamesPlayed = new Map<number, number>()
 
+    let gamesProcessed = 0
+    let gamesSkipped = 0
+
     for (const game of games) {
+      const player1Tag = (game.player1 as any)?.playertag
+      const player2Tag = (game.player2 as any)?.playertag
+
+      if (player1Tag === "Anonymous" || player2Tag === "Anonymous") {
+        console.log(`[v0] Skipping game ${game.id} - Anonymous player detected`)
+        gamesSkipped++
+        continue
+      }
+
       // Get current ELO ratings (from our map or default 1200)
       const player1Elo = playerElos.get(game.player1_id) || 1200
       const player2Elo = playerElos.get(game.player2_id) || 1200
@@ -111,6 +127,8 @@ export async function POST() {
       playerElos.set(game.player2_id, player2NewElo)
       playerGamesPlayed.set(game.player1_id, player1GamesPlayed + 1)
       playerGamesPlayed.set(game.player2_id, player2GamesPlayed + 1)
+
+      gamesProcessed++
     }
 
     // Step 5: Update all player ELO ratings in the database
@@ -118,9 +136,15 @@ export async function POST() {
       await supabase.from("players").update({ elo_rating: elo }).eq("id", playerId)
     }
 
+    console.log(
+      `[v0] ELO recalculation complete: ${gamesProcessed} games processed, ${gamesSkipped} games skipped (Anonymous)`,
+    )
+
     return NextResponse.json({
       success: true,
-      gamesProcessed: games.length,
+      gamesProcessed,
+      gamesSkipped,
+      totalGames: games.length,
     })
   } catch (error) {
     console.error("[v0] ELO recalculation error:", error)

@@ -325,7 +325,7 @@ export function AdminReportsTables({
 
       {/* Edit Report Details Dialog */}
       <Dialog open={!!selectedEdit} onOpenChange={() => setSelectedEdit(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Report Details</DialogTitle>
           </DialogHeader>
@@ -344,13 +344,26 @@ export function AdminReportsTables({
               </div>
               <div>
                 <p className="text-sm font-medium">Proposed Changes:</p>
-                <div className="rounded-lg bg-muted p-3 text-sm space-y-1">
-                  {Object.entries(selectedEdit.proposed_changes).map(([key, value]) => (
-                    <div key={key} className="flex justify-between">
-                      <span className="text-muted-foreground">{key.replace(/_/g, " ")}:</span>
-                      <span className="font-medium">{value}</span>
-                    </div>
-                  ))}
+                <div className="rounded-lg bg-muted p-4 text-sm space-y-2 max-h-96 overflow-y-auto">
+                  {Object.entries(selectedEdit.proposed_changes).map(([key, value]) => {
+                    let displayValue = value
+                    let displayKey = key.replace(/_/g, " ")
+
+                    // Format specific fields for better readability
+                    if (key === "created_at") {
+                      displayKey = "Date"
+                      displayValue = new Date(value as string).toLocaleDateString()
+                    } else if (key.includes("_id")) {
+                      displayKey = displayKey.replace(" id", "")
+                    }
+
+                    return (
+                      <div key={key} className="flex justify-between py-1 border-b border-border/50 last:border-0">
+                        <span className="text-muted-foreground capitalize">{displayKey}:</span>
+                        <span className="font-medium">{displayValue?.toString()}</span>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
               <div className="flex gap-2 pt-4">

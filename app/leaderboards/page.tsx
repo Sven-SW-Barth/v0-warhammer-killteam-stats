@@ -189,10 +189,7 @@ export default async function LeaderboardsPage({
     eloRating: stats.eloRating,
   }))
 
-  // When a country filter is applied, only show players who played games in that country
-  if (countryId && countryId !== "all") {
-    playerArray = playerArray.filter((player) => player.totalGames > 0)
-  }
+  playerArray = playerArray.filter((player) => player.totalGames > 0)
 
   const sortedByElo = [...playerArray].sort((a, b) => b.eloRating - a.eloRating)
   const playersWithRanks = sortedByElo.map((player, index) => ({
