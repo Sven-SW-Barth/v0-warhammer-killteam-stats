@@ -32,6 +32,8 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
   const [useCustomDate, setUseCustomDate] = useState(false)
   const [customDate, setCustomDate] = useState<string>("")
   const [selectedCountry, setSelectedCountry] = useState<string>("")
+  const [lastPlayer1Id, setLastPlayer1Id] = useState<string>("")
+  const [lastCountry, setLastCountry] = useState<string>("")
 
   const [player1Scores, setPlayer1Scores] = useState({ tacop: 0, critop: 0, killop: 0 })
   const [player1ScoreErrors, setPlayer1ScoreErrors] = useState({ tacop: false, critop: false, killop: false })
@@ -131,16 +133,21 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
     }
 
     if (useCustomDate && customDate) {
-      formData.set("custom_date", customDate)
+      const dateValue = customDate.includes("T") ? customDate : `${customDate}T00:00`
+      formData.set("custom_date", dateValue)
     }
 
     try {
       const result = await submitGame(formData)
 
       if (result.success) {
+        setLastPlayer1Id(player1Id)
+        setLastCountry(selectedCountry)
+
         setSuccess(true)
         setShowSuccessScreen(true)
         e.currentTarget.reset()
+
         setMapLayout("")
         setCustomMapLayout("")
         setUseCustomDate(false)
@@ -154,6 +161,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
         setPlayer2ScoreErrors({ tacop: false, critop: false, killop: false })
         setPlayer2PrimaryOp("")
         setIsAnonymousOpponent(false)
+        setSelectedCountry("")
         setFormFields({
           country: false,
           killzone: false,
@@ -189,71 +197,157 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
     setShowSuccessScreen(false)
     setSuccess(false)
     setError(null)
-    setSelectedCountry("")
+
+    // Restore player1 and country from last game
+    if (lastPlayer1Id) {
+      setPlayer1Id(lastPlayer1Id)
+      setFormFields((prev) => ({ ...prev, player1_name: true }))
+    }
+    if (lastCountry) {
+      setSelectedCountry(lastCountry)
+      setFormFields((prev) => ({ ...prev, country: true }))
+    }
   }
 
   useEffect(() => {
-    if (typeof window !== "undefined" && !selectedCountry) {
-      const locale = navigator.language || "en-US"
-      const countryCode = locale.split("-")[1]?.toUpperCase()
+    if (typeof window !== "undefined" && !selectedCountry && !lastCountry) {
+      // Try to fetch country from IP geolocation first
+      fetch("https://ipapi.co/json/")
+        .then((response) => response.json())
+        .then((data) => {
+          const countryName = data.country_name
+          if (countryName) {
+            const country = data.countries.find((c: { name: string }) => c.name === countryName)
+            if (country) {
+              setSelectedCountry(country.id.toString())
+              setFormFields((prev) => ({ ...prev, country: true }))
+              return
+            }
+          }
 
-      const countryMap: Record<string, string> = {
-        US: "United States",
-        GB: "United Kingdom",
-        DE: "Germany",
-        FR: "France",
-        ES: "Spain",
-        IT: "Italy",
-        CA: "Canada",
-        AU: "Australia",
-        NZ: "New Zealand",
-        JP: "Japan",
-        CN: "China",
-        BR: "Brazil",
-        MX: "Mexico",
-        AR: "Argentina",
-        CL: "Chile",
-        NL: "Netherlands",
-        BE: "Belgium",
-        SE: "Sweden",
-        NO: "Norway",
-        DK: "Denmark",
-        FI: "Finland",
-        PL: "Poland",
-        CZ: "Czech Republic",
-        AT: "Austria",
-        CH: "Switzerland",
-        PT: "Portugal",
-        GR: "Greece",
-        IE: "Ireland",
-        RU: "Russia",
-        IN: "India",
-        KR: "South Korea",
-        SG: "Singapore",
-        TH: "Thailand",
-        MY: "Malaysia",
-        PH: "Philippines",
-        ID: "Indonesia",
-        VN: "Vietnam",
-        ZA: "South Africa",
-        EG: "Egypt",
-        IL: "Israel",
-        TR: "Turkey",
-        SA: "Saudi Arabia",
-        AE: "United Arab Emirates",
-      }
+          // Fallback to browser locale if IP detection fails
+          const locale = navigator.language || "en-US"
+          const countryCode = locale.split("-")[1]?.toUpperCase()
 
-      const detectedCountryName = countryCode ? countryMap[countryCode] : null
+          const countryMap: Record<string, string> = {
+            US: "United States",
+            GB: "United Kingdom",
+            DE: "Germany",
+            FR: "France",
+            ES: "Spain",
+            IT: "Italy",
+            CA: "Canada",
+            AU: "Australia",
+            NZ: "New Zealand",
+            JP: "Japan",
+            CN: "China",
+            BR: "Brazil",
+            MX: "Mexico",
+            AR: "Argentina",
+            CL: "Chile",
+            NL: "Netherlands",
+            BE: "Belgium",
+            SE: "Sweden",
+            NO: "Norway",
+            DK: "Denmark",
+            FI: "Finland",
+            PL: "Poland",
+            CZ: "Czech Republic",
+            AT: "Austria",
+            CH: "Switzerland",
+            PT: "Portugal",
+            GR: "Greece",
+            IE: "Ireland",
+            RU: "Russia",
+            IN: "India",
+            KR: "South Korea",
+            SG: "Singapore",
+            TH: "Thailand",
+            MY: "Malaysia",
+            PH: "Philippines",
+            ID: "Indonesia",
+            VN: "Vietnam",
+            ZA: "South Africa",
+            EG: "Egypt",
+            IL: "Israel",
+            TR: "Turkey",
+            SA: "Saudi Arabia",
+            AE: "United Arab Emirates",
+          }
 
-      if (detectedCountryName) {
-        const country = data.countries.find((c) => c.name === detectedCountryName)
-        if (country) {
-          setSelectedCountry(country.id.toString())
-          setFormFields((prev) => ({ ...prev, country: true }))
-        }
-      }
+          const detectedCountryName = countryCode ? countryMap[countryCode] : null
+
+          if (detectedCountryName) {
+            const country = data.countries.find((c: { name: string }) => c.name === detectedCountryName)
+            if (country) {
+              setSelectedCountry(country.id.toString())
+              setFormFields((prev) => ({ ...prev, country: true }))
+            }
+          }
+        })
+        .catch(() => {
+          // If geolocation fails completely, fall back to browser locale
+          const locale = navigator.language || "en-US"
+          const countryCode = locale.split("-")[1]?.toUpperCase()
+
+          const countryMap: Record<string, string> = {
+            US: "United States",
+            GB: "United Kingdom",
+            DE: "Germany",
+            FR: "France",
+            ES: "Spain",
+            IT: "Italy",
+            CA: "Canada",
+            AU: "Australia",
+            NZ: "New Zealand",
+            JP: "Japan",
+            CN: "China",
+            BR: "Brazil",
+            MX: "Mexico",
+            AR: "Argentina",
+            CL: "Chile",
+            NL: "Netherlands",
+            BE: "Belgium",
+            SE: "Sweden",
+            NO: "Norway",
+            DK: "Denmark",
+            FI: "Finland",
+            PL: "Poland",
+            CZ: "Czech Republic",
+            AT: "Austria",
+            CH: "Switzerland",
+            PT: "Portugal",
+            GR: "Greece",
+            IE: "Ireland",
+            RU: "Russia",
+            IN: "India",
+            KR: "South Korea",
+            SG: "Singapore",
+            TH: "Thailand",
+            MY: "Malaysia",
+            PH: "Philippines",
+            ID: "Indonesia",
+            VN: "Vietnam",
+            ZA: "South Africa",
+            EG: "Egypt",
+            IL: "Israel",
+            TR: "Turkey",
+            SA: "Saudi Arabia",
+            AE: "United Arab Emirates",
+          }
+
+          const detectedCountryName = countryCode ? countryMap[countryCode] : null
+
+          if (detectedCountryName) {
+            const country = data.countries.find((c: { name: string }) => c.name === detectedCountryName)
+            if (country) {
+              setSelectedCountry(country.id.toString())
+              setFormFields((prev) => ({ ...prev, country: true }))
+            }
+          }
+        })
     }
-  }, [data.countries, selectedCountry])
+  }, [data.countries, selectedCountry, lastCountry])
 
   if (showSuccessScreen) {
     return (
@@ -321,7 +415,9 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
                   <Select
                     name="critop"
                     required
-                    onValueChange={(value) => setFormFields((prev) => ({ ...prev, critop: !!value }))}
+                    onValueChange={(value) => {
+                      setFormFields((prev) => ({ ...prev, critop: !!value }))
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select CritOp" />
@@ -341,7 +437,9 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
                   <Select
                     name="killzone"
                     required
-                    onValueChange={(value) => setFormFields((prev) => ({ ...prev, killzone: !!value }))}
+                    onValueChange={(value) => {
+                      setFormFields((prev) => ({ ...prev, killzone: !!value }))
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select killzone" />
@@ -401,15 +499,18 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
                         <p>
-                          Set the time individually when the game was in the past. Otherwise the game will be recorded
-                          at current time.
+                          Set the date when the game was played. Time is optional and will default to midnight if not
+                          specified.
                         </p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
                   {useCustomDate && (
                     <div className="space-y-2">
-                      <Label htmlFor="custom_date">Game Date</Label>
+                      <Label htmlFor="custom_date">
+                        Game Date {/* Added note about optional time */}
+                        <span className="text-muted-foreground text-xs ml-2">(Time optional)</span>
+                      </Label>
                       <Input
                         id="custom_date"
                         type="datetime-local"
