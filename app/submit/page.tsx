@@ -4,14 +4,21 @@ import { createClient } from "@/lib/supabase/server"
 export default async function SubmitPage() {
   const supabase = await createClient()
 
-  const [{ data: countries }, { data: killzones }, { data: critops }, { data: tacops }, { data: killteams }] =
-    await Promise.all([
-      supabase.from("countries").select("*").order("name"),
-      supabase.from("killzones").select("*").order("name"),
-      supabase.from("critops").select("*").order("name"),
-      supabase.from("tacops").select("*").order("archetype, name"),
-      supabase.from("killteams").select("*").order("name"),
-    ])
+  const [
+    { data: countries },
+    { data: killzones },
+    { data: critops },
+    { data: tacops },
+    { data: killteams },
+    { data: players },
+  ] = await Promise.all([
+    supabase.from("countries").select("*").order("name"),
+    supabase.from("killzones").select("*").order("name"),
+    supabase.from("critops").select("*").order("name"),
+    supabase.from("tacops").select("*").order("archetype, name"),
+    supabase.from("killteams").select("*").order("name"),
+    supabase.from("players").select("id, playertag").order("playertag"),
+  ])
 
   return (
     <div className="min-h-screen bg-background">
@@ -27,13 +34,12 @@ export default async function SubmitPage() {
 
         <div className="mx-auto max-w-6xl">
           <GameEntryForm
-            data={{
-              countries: countries || [],
-              killzones: killzones || [],
-              critops: critops || [],
-              tacops: tacops || [],
-              killteams: killteams || [],
-            }}
+            players={players || []}
+            countries={countries || []}
+            killzones={killzones || []}
+            critops={critops || []}
+            tacops={tacops || []}
+            killteams={killteams || []}
           />
         </div>
       </div>
