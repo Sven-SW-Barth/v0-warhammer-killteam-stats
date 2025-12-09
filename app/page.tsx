@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import { Footer } from "@/components/footer"
 import { KofiButton } from "@/components/kofi-button"
 
 export default async function LandingPage() {
@@ -99,7 +98,6 @@ export default async function LandingPage() {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Heart } from "lucide-react"
+import { BugReportDialog } from "./bug-report-dialog"
 
 export function Footer() {
   return (
@@ -8,10 +9,11 @@ export function Footer() {
         <p className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
           Made with <Heart className="h-4 w-4 fill-red-500 text-red-500" /> by stickon2 for the community
         </p>
-        <div className="mt-2">
+        <div className="mt-2 flex items-center justify-center gap-4">
           <Link href="/privacy" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             Privacy & Legal
           </Link>
+          <BugReportDialog />
         </div>
       </div>
     </footer>

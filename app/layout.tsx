@@ -3,6 +3,8 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { Suspense } from "react"
 import { Navigation } from "@/components/navigation"
+import { Footer } from "@/components/footer"
+import { BackToTopButton } from "@/components/back-to-top-button"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
@@ -28,9 +30,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`font-sans ${inter.variable}`}>
+      <body className={`font-sans ${inter.variable} flex min-h-screen flex-col`}>
         <Navigation />
-        <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+        <main className="flex-1">
+          <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+        </main>
+        <Footer />
+        <BackToTopButton />
       </body>
     </html>
   )

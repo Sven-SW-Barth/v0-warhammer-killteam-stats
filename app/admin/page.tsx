@@ -22,6 +22,7 @@ export default function AdminPage() {
     message: string
   } | null>(null)
   const [deletionReports, setDeletionReports] = useState<any[]>([])
+  const [bugReports, setBugReports] = useState<any[]>([])
   const [isLoadingReports, setIsLoadingReports] = useState(false)
 
   useEffect(() => {
@@ -54,7 +55,17 @@ export default function AdminPage() {
         console.error("[v0] Error loading deletion reports:", deletionError)
       }
 
+      const { data: bugs, error: bugError } = await supabase
+        .from("bug_reports")
+        .select("*")
+        .order("created_at", { ascending: false })
+
+      if (bugError) {
+        console.error("[v0] Error loading bug reports:", bugError)
+      }
+
       setDeletionReports(deletions || [])
+      setBugReports(bugs || [])
     } catch (error) {
       console.error("[v0] Error loading reports:", error)
     } finally {
@@ -192,7 +203,7 @@ export default function AdminPage() {
             <p className="text-center text-muted-foreground">Loading reports...</p>
           </Card>
         ) : (
-          <AdminReportsTables deletionReports={deletionReports} onReportsChange={loadReports} />
+          <AdminReportsTables deletionReports={deletionReports} bugReports={bugReports} onReportsChange={loadReports} />
         )}
 
         <Card className="p-6">

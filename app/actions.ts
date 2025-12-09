@@ -382,3 +382,69 @@ export async function rejectEditReport(reportId: number) {
     return { error: "Failed to reject edit report. Please try again." }
   }
 }
+
+export async function submitBugReport(data: {
+  reporterName: string
+  reporterEmail: string
+  title: string
+  description: string
+  pageUrl: string
+  browserInfo: string
+}) {
+  const supabase = await createClient()
+
+  try {
+    const { error } = await supabase.from("bug_reports").insert({
+      reporter_name: data.reporterName,
+      reporter_email: data.reporterEmail || null,
+      title: data.title,
+      description: data.description,
+      page_url: data.pageUrl,
+      browser_info: data.browserInfo,
+      status: "new",
+    })
+
+    if (error) throw error
+
+    revalidatePath("/admin")
+
+    return { success: true }
+  } catch (error) {
+    console.error("[v0] Error submitting bug report:", error)
+    return { error: "Failed to submit bug report. Please try again." }
+  }
+}
+
+export async function deleteBugReport(reportId: number) {
+  const supabase = createAdminClient()
+
+  try {
+    const { error } = await supabase.from("bug_reports").delete().eq("id", reportId)
+
+    if (error) throw error
+
+    revalidatePath("/admin")
+
+    return { success: true }
+  } catch (error) {
+    console.error("[v0] Error deleting bug report:", error)
+    return { error: "Failed to delete bug report. Please try again." }
+  }
+}
+
+export async function updateBugReportStatus(reportId: number, status: string) {
+  const supabase = createAdminClient()
+
+  try {
+    const { error } = await supabase.from("bug_reports").update({ status }).eq("id", reportId)
+
+    if (error) throw error
+
+    revalidatePath("/admin")
+
+    return { success: true }
+  } catch (error) {
+    console.error("[v0] Error updating bug report status:", error)
+    return { error: "Failed to update bug report status. Please try again." }
+  }
+}
