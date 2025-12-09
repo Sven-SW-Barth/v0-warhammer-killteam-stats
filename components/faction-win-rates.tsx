@@ -21,6 +21,7 @@ type FactionStat = {
   winRate: number
   avgScore: number
   color: string
+  seasons: number
 }
 
 type Killzone = {
@@ -48,6 +49,7 @@ export function FactionWinRates({
   const router = useRouter()
   const searchParams = useSearchParams()
   const [showAllFactions, setShowAllFactions] = useState(false)
+  const [excludeSeason1, setExcludeSeason1] = useState(false)
   const [viewMode, setViewMode] = useState<"winRate" | "avgScore">("winRate")
   const [selectedFaction, setSelectedFaction] = useState<{ id: string; name: string } | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -66,7 +68,6 @@ export function FactionWinRates({
 
   const selectedKillzone = searchParams.get("killzone") || "all"
   const selectedCritop = searchParams.get("critop") || "all"
-  const excludeSeason1 = searchParams.get("excludeSeason1") === "true"
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -78,17 +79,9 @@ export function FactionWinRates({
     router.push(`/stats?${params.toString()}`)
   }
 
-  const toggleExcludeSeason1 = (checked: boolean) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (checked) {
-      params.set("excludeSeason1", "true")
-    } else {
-      params.delete("excludeSeason1")
-    }
-    router.push(`/stats?${params.toString()}`)
-  }
+  const filteredBySeason = excludeSeason1 ? factionStats.filter((stat) => stat.seasons !== 1) : factionStats
 
-  const filteredForChart = showAllFactions ? factionStats : factionStats.filter((stat) => stat.totalGames >= 3)
+  const filteredForChart = showAllFactions ? filteredBySeason : filteredBySeason.filter((stat) => stat.totalGames >= 3)
 
   const sortedStats = [...filteredForChart].sort((a, b) =>
     viewMode === "winRate" ? b.winRate - a.winRate : b.avgScore - a.avgScore,
@@ -116,7 +109,7 @@ export function FactionWinRates({
     }
   }
 
-  const sortedFactionStats = [...factionStats].sort((a, b) => {
+  const sortedFactionStats = [...filteredForChart].sort((a, b) => {
     let aValue: number | string
     let bValue: number | string
 
@@ -270,7 +263,7 @@ export function FactionWinRates({
               <Checkbox
                 id="exclude-season1"
                 checked={excludeSeason1}
-                onCheckedChange={(checked) => toggleExcludeSeason1(checked === true)}
+                onCheckedChange={(checked) => setExcludeSeason1(checked === true)}
               />
               <Label htmlFor="exclude-season1" className="text-xs font-normal cursor-pointer sm:text-sm">
                 Exclude declassified Killteams

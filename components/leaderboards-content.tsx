@@ -17,7 +17,7 @@ type Player = {
   avgScore: number
   winRate: number
   eloRating: number
-  rank: number // Added rank property
+  rank: number
 }
 
 export function LeaderboardsContent({ players }: { players: Player[] }) {
