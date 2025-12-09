@@ -21,7 +21,16 @@ type ReferenceData = {
   killteams: Array<{ id: number; name: string }>
 }
 
-export function GameEntryForm({ data }: { data: ReferenceData }) {
+type GameEntryFormProps = {
+  players: any[]
+  countries: ReferenceData["countries"]
+  killteams: ReferenceData["killteams"]
+  killzones: ReferenceData["killzones"]
+  tacops: ReferenceData["tacops"]
+  critops: ReferenceData["critops"]
+}
+
+export function GameEntryForm({ players, countries, killteams, killzones, tacops, critops }: GameEntryFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -194,19 +203,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
   }
 
   const handleSubmitAnother = () => {
-    setShowSuccessScreen(false)
-    setSuccess(false)
-    setError(null)
-
-    // Restore player1 and country from last game
-    if (lastPlayer1Id) {
-      setPlayer1Id(lastPlayer1Id)
-      setFormFields((prev) => ({ ...prev, player1_name: true }))
-    }
-    if (lastCountry) {
-      setSelectedCountry(lastCountry)
-      setFormFields((prev) => ({ ...prev, country: true }))
-    }
+    window.location.href = "/submit"
   }
 
   useEffect(() => {
@@ -217,7 +214,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
         .then((data) => {
           const countryName = data.country_name
           if (countryName) {
-            const country = data.countries.find((c: { name: string }) => c.name === countryName)
+            const country = countries.find((c: { name: string }) => c.name === countryName)
             if (country) {
               setSelectedCountry(country.id.toString())
               setFormFields((prev) => ({ ...prev, country: true }))
@@ -278,7 +275,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
           const detectedCountryName = countryCode ? countryMap[countryCode] : null
 
           if (detectedCountryName) {
-            const country = data.countries.find((c: { name: string }) => c.name === detectedCountryName)
+            const country = countries.find((c: { name: string }) => c.name === detectedCountryName)
             if (country) {
               setSelectedCountry(country.id.toString())
               setFormFields((prev) => ({ ...prev, country: true }))
@@ -339,7 +336,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
           const detectedCountryName = countryCode ? countryMap[countryCode] : null
 
           if (detectedCountryName) {
-            const country = data.countries.find((c: { name: string }) => c.name === detectedCountryName)
+            const country = countries.find((c: { name: string }) => c.name === detectedCountryName)
             if (country) {
               setSelectedCountry(country.id.toString())
               setFormFields((prev) => ({ ...prev, country: true }))
@@ -347,7 +344,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
           }
         })
     }
-  }, [data.countries, selectedCountry, lastCountry])
+  }, [countries, selectedCountry, lastCountry])
 
   if (showSuccessScreen) {
     return (
@@ -401,7 +398,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
                     <SelectContent>
-                      {data.countries.map((country) => (
+                      {countries.map((country) => (
                         <SelectItem key={country.id} value={country.id.toString()}>
                           {country.name}
                         </SelectItem>
@@ -423,7 +420,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
                       <SelectValue placeholder="Select CritOp" />
                     </SelectTrigger>
                     <SelectContent>
-                      {data.critops.map((critop) => (
+                      {critops.map((critop) => (
                         <SelectItem key={critop.id} value={critop.id.toString()}>
                           {critop.name}
                         </SelectItem>
@@ -445,7 +442,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
                       <SelectValue placeholder="Select killzone" />
                     </SelectTrigger>
                     <SelectContent>
-                      {data.killzones.map((killzone) => (
+                      {killzones.map((killzone) => (
                         <SelectItem key={killzone.id} value={killzone.id.toString()}>
                           {killzone.name}
                         </SelectItem>
@@ -577,7 +574,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
                         <SelectValue placeholder="Select kill team" />
                       </SelectTrigger>
                       <SelectContent>
-                        {data.killteams.map((killteam) => (
+                        {killteams.map((killteam) => (
                           <SelectItem key={killteam.id} value={killteam.id.toString()}>
                             {killteam.name}
                           </SelectItem>
@@ -597,7 +594,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
                         <SelectValue placeholder="Select TacOp" />
                       </SelectTrigger>
                       <SelectContent>
-                        {data.tacops.map((tacop) => (
+                        {tacops.map((tacop) => (
                           <SelectItem key={tacop.id} value={tacop.id.toString()}>
                             {tacop.name} ({tacop.archetype})
                           </SelectItem>
@@ -790,7 +787,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
                         <SelectValue placeholder="Select kill team" />
                       </SelectTrigger>
                       <SelectContent>
-                        {data.killteams.map((killteam) => (
+                        {killteams.map((killteam) => (
                           <SelectItem key={killteam.id} value={killteam.id.toString()}>
                             {killteam.name}
                           </SelectItem>
@@ -810,7 +807,7 @@ export function GameEntryForm({ data }: { data: ReferenceData }) {
                         <SelectValue placeholder="Select TacOp" />
                       </SelectTrigger>
                       <SelectContent>
-                        {data.tacops.map((tacop) => (
+                        {tacops.map((tacop) => (
                           <SelectItem key={tacop.id} value={tacop.id.toString()}>
                             {tacop.name} ({tacop.archetype})
                           </SelectItem>
