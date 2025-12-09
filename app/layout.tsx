@@ -12,8 +12,11 @@ export const metadata: Metadata = {
   description: "Track Warhammer 40k Kill Team battles and view global statistics",
   generator: "v0.app",
   icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.svg", type: "image/svg+xml", sizes: "32x32" },
+    ],
+    shortcut: "/favicon.svg",
     apple: "/icon.svg",
   },
 }

@@ -1,4 +1,4 @@
-<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#000000;stop-opacity:1" />
@@ -7,10 +7,10 @@
   </defs>
   
   <!-- Background with rounded corners -->
-  <rect width="180" height="180" rx="37" fill="url(#bgGradient)" />
+  <rect width="32" height="32" rx="6" fill="url(#bgGradient)" />
   
-  <!-- Skull icon centered (scaled up from 24x24 to fill the icon nicely) -->
-  <g transform="translate(45, 45) scale(3.75)">
+  <!-- Skull icon centered -->
+  <g transform="translate(8, 8) scale(0.667)">
     <path d="M12 2C6.477 2 2 6.477 2 12c0 3.6 1.911 6.753 4.778 8.5.206.125.328.354.32.598l-.046.935c-.028.579.492.98 1.022.785l1.545-.567a.75.75 0 0 1 .572.015A10.97 10.97 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2Z" fill="white" />
     <circle cx="9" cy="10" r="1.5" fill="#000000" />
     <circle cx="15" cy="10" r="1.5" fill="#000000" />
