@@ -79,6 +79,7 @@ interface EloDataPoint {
   date: string
   elo: number
   gameNumber: number
+  hasElo: boolean // Track whether this game has actual ELO data
 }
 
 interface EnemyKillteamStats {
@@ -486,16 +487,27 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
       setFrequentOpponents(opponents)
 
       const eloData: EloDataPoint[] = []
+      let lastKnownElo = 1200 // Starting ELO
       games.forEach((game, index) => {
         const isPlayer1 = game.player1_id.toString() === playerId
-        const eloBefore = isPlayer1 ? game.player1_elo_before : game.player2_elo_before
         const eloAfter = isPlayer1 ? game.player1_elo_after : game.player2_elo_after
 
         if (eloAfter !== null && eloAfter !== undefined) {
+          // Game has ELO data
+          lastKnownElo = eloAfter
           eloData.push({
             date: format(new Date(game.created_at), "MMM dd, yyyy"),
             elo: eloAfter,
             gameNumber: index + 1,
+            hasElo: true,
+          })
+        } else {
+          // Game without ELO - use last known ELO and mark as grey
+          eloData.push({
+            date: format(new Date(game.created_at), "MMM dd, yyyy"),
+            elo: lastKnownElo,
+            gameNumber: index + 1,
+            hasElo: false,
           })
         }
       })
@@ -678,9 +690,21 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
                           dataKey="elo"
                           stroke="#60a5fa"
                           strokeWidth={2}
-                          dot={{ fill: "#60a5fa", r: 3 }}
+                          dot={(props: any) => {
+                            const { cx, cy, payload } = props
+                            return (
+                              <circle
+                                cx={cx}
+                                cy={cy}
+                                r={3}
+                                fill={payload.hasElo ? "#60a5fa" : "#6b7280"}
+                                stroke="none"
+                              />
+                            )
+                          }}
                           activeDot={{ r: 5 }}
                           name="ELO Rating"
+                          connectNulls={true}
                         />
                       </LineChart>
                     </ResponsiveContainer>
