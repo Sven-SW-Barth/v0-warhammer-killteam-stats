@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   title: "KT Open Play",
   description: "Track Warhammer 40k Kill Team battles and view global statistics",
   generator: "v0.app",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 }
 
 export default function RootLayout({
