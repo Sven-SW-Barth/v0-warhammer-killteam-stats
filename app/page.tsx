@@ -75,8 +75,8 @@ export default async function LandingPage() {
 
         {/* Glass Feedback Video Section */}
         <div className="mb-12 flex flex-col items-center justify-center rounded-lg border border-border bg-card p-6 sm:mb-16 sm:p-8">
-          <h2 className="mb-6 text-center text-2xl font-bold text-foreground sm:text-3xl">
-            Listen to Glass honest feedback!
+          <h2 className="mb-6 text-center text-2xl sm:text-3xl text-foreground font-normal">
+            The best Killteam channel if you are not aware of any other killteam channel recommends.
           </h2>
           <div className="w-full max-w-3xl">
             <div className="relative aspect-video w-full overflow-hidden rounded-lg">
