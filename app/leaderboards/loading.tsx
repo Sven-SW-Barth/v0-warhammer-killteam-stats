@@ -1,12 +1,6 @@
-import { createClient } from "@/lib/supabase/server"
-import { LeaderboardsFilters } from "@/components/leaderboards-filters"
-import { LeaderboardsContentWrapper } from "@/components/leaderboards-content-wrapper"
+import { LeaderboardsSkeleton } from "@/components/skeletons/leaderboards-skeleton"
 
-export default async function LeaderboardsPage() {
-  const supabase = await createClient()
-
-  const { data: countries } = await supabase.from("countries").select("id, name").order("name")
-
+export default function Loading() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 sm:py-8">
@@ -19,9 +13,7 @@ export default async function LeaderboardsPage() {
           </p>
         </header>
 
-        <LeaderboardsFilters countries={countries || []} />
-
-        <LeaderboardsContentWrapper />
+        <LeaderboardsSkeleton />
       </div>
     </div>
   )

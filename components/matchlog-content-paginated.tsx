@@ -5,8 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { MatchlogItem } from "@/components/matchlog-item"
 import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Card } from "@/components/ui/card"
+import { MatchlogSkeleton } from "@/components/skeletons/matchlog-skeleton"
 
 type Game = any // Use the proper Game type from your schema
 
@@ -118,19 +117,7 @@ export function MatchlogContent() {
   }
 
   if (loading) {
-    return (
-      <div className="space-y-3">
-        {[...Array(5)].map((_, i) => (
-          <Card key={i} className="p-4">
-            <div className="space-y-3">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-20 w-full" />
-            </div>
-          </Card>
-        ))}
-      </div>
-    )
+    return <MatchlogSkeleton />
   }
 
   if (error) {
