@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
@@ -56,10 +56,8 @@ export function FactionWinRates({
   const [sortColumn, setSortColumn] = useState<SortColumn>("winRate")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [isMobile, setIsMobile] = useState(false)
-  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
-    setIsMounted(true)
     const handleResize = () => {
       setIsMobile(window.innerWidth < 640)
     }
@@ -80,25 +78,38 @@ export function FactionWinRates({
     } else {
       params.set(key, value)
     }
-    window.history.pushState({}, "", `/stats?${params.toString()}`)
-    router.refresh()
+    router.push(`/stats?${params.toString()}`)
   }
 
-  const filteredBySeason = excludeSeason1 ? factionStats.filter((stat) => stat.seasons !== 1) : factionStats
-
-  const filteredForChart = showAllFactions ? filteredBySeason : filteredBySeason.filter((stat) => stat.totalGames >= 3)
-
-  const sortedStats = [...filteredForChart].sort((a, b) =>
-    viewMode === "winRate" ? b.winRate - a.winRate : b.avgScore - a.avgScore,
+  const filteredBySeason = useMemo(
+    () => (excludeSeason1 ? factionStats.filter((stat) => stat.seasons !== 1) : factionStats),
+    [excludeSeason1, factionStats],
   )
 
-  const chartData = sortedStats.map((stat) => ({
-    faction: stat.name,
-    value:
-      viewMode === "winRate" ? Number.parseFloat(stat.winRate.toFixed(1)) : Number.parseFloat(stat.avgScore.toFixed(1)),
-    games: stat.totalGames,
-    fill: stat.color,
-  }))
+  const filteredForChart = useMemo(
+    () => (showAllFactions ? filteredBySeason : filteredBySeason.filter((stat) => stat.totalGames >= 3)),
+    [showAllFactions, filteredBySeason],
+  )
+
+  const sortedStats = useMemo(
+    () =>
+      [...filteredForChart].sort((a, b) => (viewMode === "winRate" ? b.winRate - a.winRate : b.avgScore - a.avgScore)),
+    [filteredForChart, viewMode],
+  )
+
+  const chartData = useMemo(
+    () =>
+      sortedStats.map((stat) => ({
+        faction: stat.name,
+        value:
+          viewMode === "winRate"
+            ? Number.parseFloat(stat.winRate.toFixed(1))
+            : Number.parseFloat(stat.avgScore.toFixed(1)),
+        games: stat.totalGames,
+        fill: stat.color,
+      })),
+    [sortedStats, viewMode],
+  )
 
   const handleFactionClick = (factionId: string, factionName: string) => {
     setSelectedFaction({ id: factionId, name: factionName })
@@ -114,48 +125,52 @@ export function FactionWinRates({
     }
   }
 
-  const sortedFactionStats = [...filteredForChart].sort((a, b) => {
-    let aValue: number | string
-    let bValue: number | string
+  const sortedFactionStats = useMemo(() => {
+    return [...filteredForChart].sort((a, b) => {
+      let aValue: number | string
+      let bValue: number | string
 
-    switch (sortColumn) {
-      case "name":
-        aValue = a.name.toLowerCase()
-        bValue = b.name.toLowerCase()
-        break
-      case "games":
-        aValue = a.totalGames
-        bValue = b.totalGames
-        break
-      case "wins":
-        aValue = a.wins
-        bValue = b.wins
-        break
-      case "losses":
-        aValue = a.losses
-        bValue = b.losses
-        break
-      case "draws":
-        aValue = a.draws
-        bValue = b.draws
-        break
-      case "winRate":
-        aValue = a.winRate
-        bValue = b.winRate
-        break
-      case "avgScore":
-      default:
-        aValue = a.avgScore
-        bValue = b.avgScore
-        break
-    }
+      switch (sortColumn) {
+        case "name":
+          aValue = a.name.toLowerCase()
+          bValue = b.name.toLowerCase()
+          break
+        case "games":
+          aValue = a.totalGames
+          bValue = b.totalGames
+          break
+        case "wins":
+          aValue = a.wins
+          bValue = b.wins
+          break
+        case "losses":
+          aValue = a.losses
+          bValue = b.losses
+          break
+        case "draws":
+          aValue = a.draws
+          bValue = b.draws
+          break
+        case "winRate":
+          aValue = a.winRate
+          bValue = b.winRate
+          break
+        case "avgScore":
+        default:
+          aValue = a.avgScore
+          bValue = b.avgScore
+          break
+      }
 
-    if (typeof aValue === "string" && typeof bValue === "string") {
-      return sortDirection === "desc" ? bValue.localeCompare(aValue) : aValue.localeCompare(bValue)
-    }
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return sortDirection === "desc" ? bValue.localeCompare(aValue) : aValue.localeCompare(bValue)
+      }
 
-    return sortDirection === "desc" ? (bValue as number) - (aValue as number) : (aValue as number) - (bValue as number)
-  })
+      return sortDirection === "desc"
+        ? (bValue as number) - (aValue as number)
+        : (aValue as number) - (bValue as number)
+    })
+  }, [filteredForChart, sortColumn, sortDirection])
 
   const SortIcon = ({ column }: { column: SortColumn }) => {
     if (sortColumn !== column) {
@@ -278,56 +293,50 @@ export function FactionWinRates({
         </CardHeader>
         <CardContent className="px-2 sm:px-6">
           {chartData.length > 0 ? (
-            <div className="h-[300px] w-full sm:h-[400px] min-h-[300px] sm:min-h-[400px]">
-              {isMounted ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={chartData}
-                    margin={{
-                      top: 20,
-                      right: isMobile ? 2 : 10,
-                      left: isMobile ? -10 : 0,
-                      bottom: 60,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#4a5568" opacity={0.5} />
-                    <XAxis
-                      dataKey="faction"
-                      angle={-45}
-                      textAnchor="end"
-                      height={100}
-                      interval={0}
-                      stroke="#e5e7eb"
-                      tick={{ fill: "#e5e7eb", fontSize: isMobile ? 5 : 12 }}
-                    />
-                    <YAxis
-                      stroke="#e5e7eb"
-                      tick={{ fill: "#e5e7eb", fontSize: isMobile ? 8 : 12 }}
-                      label={
-                        !isMobile
-                          ? {
-                              value: viewMode === "winRate" ? "Win Rate %" : "Average Score",
-                              angle: -90,
-                              position: "insideLeft",
-                              style: { fill: "#e5e7eb", fontSize: 12 },
-                            }
-                          : undefined
-                      }
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    {!isMobile && <Legend wrapperStyle={{ color: "#e5e7eb" }} />}
-                    <Bar
-                      dataKey="value"
-                      name={viewMode === "winRate" ? "Win Rate %" : "Average Score"}
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-full items-center justify-center">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                </div>
-              )}
+            <div className="h-[300px] w-full sm:h-[400px]" style={{ minHeight: "300px" }}>
+              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+                <BarChart
+                  data={chartData}
+                  margin={{
+                    top: 20,
+                    right: isMobile ? 2 : 10,
+                    left: isMobile ? -10 : 0,
+                    bottom: 60,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#4a5568" opacity={0.5} />
+                  <XAxis
+                    dataKey="faction"
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                    interval={0}
+                    stroke="#e5e7eb"
+                    tick={{ fill: "#e5e7eb", fontSize: isMobile ? 5 : 12 }}
+                  />
+                  <YAxis
+                    stroke="#e5e7eb"
+                    tick={{ fill: "#e5e7eb", fontSize: isMobile ? 8 : 12 }}
+                    label={
+                      !isMobile
+                        ? {
+                            value: viewMode === "winRate" ? "Win Rate %" : "Average Score",
+                            angle: -90,
+                            position: "insideLeft",
+                            style: { fill: "#e5e7eb", fontSize: 12 },
+                          }
+                        : undefined
+                    }
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  {!isMobile && <Legend wrapperStyle={{ color: "#e5e7eb" }} />}
+                  <Bar
+                    dataKey="value"
+                    name={viewMode === "winRate" ? "Win Rate %" : "Average Score"}
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           ) : (
             <div className="flex h-[300px] items-center justify-center text-center text-sm text-muted-foreground sm:h-[400px] sm:text-base">
