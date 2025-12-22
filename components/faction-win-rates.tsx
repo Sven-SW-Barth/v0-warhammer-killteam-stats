@@ -57,11 +57,9 @@ export function FactionWinRates({
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [isMobile, setIsMobile] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
-  const [chartReady, setChartReady] = useState(false)
 
   useEffect(() => {
     setIsMounted(true)
-    const timer = setTimeout(() => setChartReady(true), 100)
     const handleResize = () => {
       setIsMobile(window.innerWidth < 640)
     }
@@ -69,7 +67,6 @@ export function FactionWinRates({
     window.addEventListener("resize", handleResize)
     return () => {
       window.removeEventListener("resize", handleResize)
-      clearTimeout(timer)
     }
   }, [])
 
@@ -282,8 +279,8 @@ export function FactionWinRates({
         <CardContent className="px-2 sm:px-6">
           {chartData.length > 0 ? (
             <div className="h-[300px] w-full sm:h-[400px] min-h-[300px] sm:min-h-[400px]">
-              {isMounted && chartReady ? (
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+              {isMounted ? (
+                <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={chartData}
                     margin={{
