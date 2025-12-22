@@ -8,8 +8,14 @@ import { useState } from "react"
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+  const handleNavigation = (href: string) => {
+    setMobileMenuOpen(false)
+    // Use native navigation to avoid React concurrent mode issues
+    window.location.href = href
+  }
+
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-card">
+    <nav className="sticky top-0 z-[100] border-b border-border bg-card">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
@@ -69,41 +75,35 @@ export function Navigation() {
         {mobileMenuOpen && (
           <div className="border-t border-border py-4 md:hidden">
             <div className="flex flex-col gap-2">
-              <Link
-                href="/stats"
-                className="rounded-md px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                onClick={() => setMobileMenuOpen(false)}
+              <button
+                onClick={() => handleNavigation("/stats")}
+                className="rounded-md px-4 py-3 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 Statistics
-              </Link>
-              <Link
-                href="/matchlog"
-                className="rounded-md px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                onClick={() => setMobileMenuOpen(false)}
+              </button>
+              <button
+                onClick={() => handleNavigation("/matchlog")}
+                className="rounded-md px-4 py-3 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 Matchlog
-              </Link>
-              <Link
-                href="/leaderboards"
-                className="rounded-md px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                onClick={() => setMobileMenuOpen(false)}
+              </button>
+              <button
+                onClick={() => handleNavigation("/leaderboards")}
+                className="rounded-md px-4 py-3 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 Leaderboards
-              </Link>
-              <Link
-                href="/live-tracker"
-                className="rounded-md px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground relative"
-                onClick={() => setMobileMenuOpen(false)}
+              </button>
+              <button
+                onClick={() => handleNavigation("/live-tracker")}
+                className="rounded-md px-4 py-3 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground relative"
               >
                 Live Tracker
                 <span className="absolute top-2 right-4 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
                   BETA
                 </span>
-              </Link>
-              <Button asChild className="mt-2">
-                <Link href="/submit" onClick={() => setMobileMenuOpen(false)}>
-                  Submit Game
-                </Link>
+              </button>
+              <Button onClick={() => handleNavigation("/submit")} className="mt-2">
+                Submit Game
               </Button>
             </div>
           </div>

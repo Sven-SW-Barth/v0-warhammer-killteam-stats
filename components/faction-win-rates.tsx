@@ -56,14 +56,21 @@ export function FactionWinRates({
   const [sortColumn, setSortColumn] = useState<SortColumn>("winRate")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [isMobile, setIsMobile] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
+  const [chartReady, setChartReady] = useState(false)
 
   useEffect(() => {
+    setIsMounted(true)
+    const timer = setTimeout(() => setChartReady(true), 100)
     const handleResize = () => {
       setIsMobile(window.innerWidth < 640)
     }
     handleResize()
     window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
+    return () => {
+      window.removeEventListener("resize", handleResize)
+      clearTimeout(timer)
+    }
   }, [])
 
   const selectedKillzone = searchParams.get("killzone") || "all"
@@ -76,7 +83,8 @@ export function FactionWinRates({
     } else {
       params.set(key, value)
     }
-    router.push(`/stats?${params.toString()}`)
+    window.history.pushState({}, "", `/stats?${params.toString()}`)
+    router.refresh()
   }
 
   const filteredBySeason = excludeSeason1 ? factionStats.filter((stat) => stat.seasons !== 1) : factionStats
@@ -273,50 +281,56 @@ export function FactionWinRates({
         </CardHeader>
         <CardContent className="px-2 sm:px-6">
           {chartData.length > 0 ? (
-            <div className="h-[300px] w-full sm:h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  margin={{
-                    top: 20,
-                    right: isMobile ? 2 : 10,
-                    left: isMobile ? -10 : 0,
-                    bottom: 60,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#4a5568" opacity={0.5} />
-                  <XAxis
-                    dataKey="faction"
-                    angle={-45}
-                    textAnchor="end"
-                    height={100}
-                    interval={0}
-                    stroke="#e5e7eb"
-                    tick={{ fill: "#e5e7eb", fontSize: isMobile ? 5 : 12 }}
-                  />
-                  <YAxis
-                    stroke="#e5e7eb"
-                    tick={{ fill: "#e5e7eb", fontSize: isMobile ? 8 : 12 }}
-                    label={
-                      !isMobile
-                        ? {
-                            value: viewMode === "winRate" ? "Win Rate %" : "Average Score",
-                            angle: -90,
-                            position: "insideLeft",
-                            style: { fill: "#e5e7eb", fontSize: 12 },
-                          }
-                        : undefined
-                    }
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  {!isMobile && <Legend wrapperStyle={{ color: "#e5e7eb" }} />}
-                  <Bar
-                    dataKey="value"
-                    name={viewMode === "winRate" ? "Win Rate %" : "Average Score"}
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="h-[300px] w-full sm:h-[400px] min-h-[300px] sm:min-h-[400px]">
+              {isMounted && chartReady ? (
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                  <BarChart
+                    data={chartData}
+                    margin={{
+                      top: 20,
+                      right: isMobile ? 2 : 10,
+                      left: isMobile ? -10 : 0,
+                      bottom: 60,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#4a5568" opacity={0.5} />
+                    <XAxis
+                      dataKey="faction"
+                      angle={-45}
+                      textAnchor="end"
+                      height={100}
+                      interval={0}
+                      stroke="#e5e7eb"
+                      tick={{ fill: "#e5e7eb", fontSize: isMobile ? 5 : 12 }}
+                    />
+                    <YAxis
+                      stroke="#e5e7eb"
+                      tick={{ fill: "#e5e7eb", fontSize: isMobile ? 8 : 12 }}
+                      label={
+                        !isMobile
+                          ? {
+                              value: viewMode === "winRate" ? "Win Rate %" : "Average Score",
+                              angle: -90,
+                              position: "insideLeft",
+                              style: { fill: "#e5e7eb", fontSize: 12 },
+                            }
+                          : undefined
+                      }
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    {!isMobile && <Legend wrapperStyle={{ color: "#e5e7eb" }} />}
+                    <Bar
+                      dataKey="value"
+                      name={viewMode === "winRate" ? "Win Rate %" : "Average Score"}
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex h-[300px] items-center justify-center text-center text-sm text-muted-foreground sm:h-[400px] sm:text-base">
