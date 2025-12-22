@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -46,7 +46,6 @@ export function FactionWinRates({
   killzones: Killzone[]
   critops: Critop[]
 }) {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [showAllFactions, setShowAllFactions] = useState(false)
   const [excludeSeason1, setExcludeSeason1] = useState(false)
@@ -76,7 +75,12 @@ export function FactionWinRates({
     } else {
       params.set(key, value)
     }
-    router.push(`/stats?${params.toString()}`)
+
+    const newUrl = `/stats${params.toString() ? `?${params.toString()}` : ""}`
+    window.history.pushState({}, "", newUrl)
+
+    // Trigger a custom event to notify other components
+    window.dispatchEvent(new PopStateEvent("popstate"))
   }
 
   const filteredBySeason = excludeSeason1 ? factionStats.filter((stat) => stat.seasons !== 1) : factionStats
