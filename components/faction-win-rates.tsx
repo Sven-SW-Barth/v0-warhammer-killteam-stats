@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
@@ -63,9 +63,7 @@ export function FactionWinRates({
     }
     handleResize()
     window.addEventListener("resize", handleResize)
-    return () => {
-      window.removeEventListener("resize", handleResize)
-    }
+    return () => window.removeEventListener("resize", handleResize)
   }, [])
 
   const selectedKillzone = searchParams.get("killzone") || "all"
@@ -81,35 +79,21 @@ export function FactionWinRates({
     router.push(`/stats?${params.toString()}`)
   }
 
-  const filteredBySeason = useMemo(
-    () => (excludeSeason1 ? factionStats.filter((stat) => stat.seasons !== 1) : factionStats),
-    [excludeSeason1, factionStats],
+  const filteredBySeason = excludeSeason1 ? factionStats.filter((stat) => stat.seasons !== 1) : factionStats
+
+  const filteredForChart = showAllFactions ? filteredBySeason : filteredBySeason.filter((stat) => stat.totalGames >= 3)
+
+  const sortedStats = [...filteredForChart].sort((a, b) =>
+    viewMode === "winRate" ? b.winRate - a.winRate : b.avgScore - a.avgScore,
   )
 
-  const filteredForChart = useMemo(
-    () => (showAllFactions ? filteredBySeason : filteredBySeason.filter((stat) => stat.totalGames >= 3)),
-    [showAllFactions, filteredBySeason],
-  )
-
-  const sortedStats = useMemo(
-    () =>
-      [...filteredForChart].sort((a, b) => (viewMode === "winRate" ? b.winRate - a.winRate : b.avgScore - a.avgScore)),
-    [filteredForChart, viewMode],
-  )
-
-  const chartData = useMemo(
-    () =>
-      sortedStats.map((stat) => ({
-        faction: stat.name,
-        value:
-          viewMode === "winRate"
-            ? Number.parseFloat(stat.winRate.toFixed(1))
-            : Number.parseFloat(stat.avgScore.toFixed(1)),
-        games: stat.totalGames,
-        fill: stat.color,
-      })),
-    [sortedStats, viewMode],
-  )
+  const chartData = sortedStats.map((stat) => ({
+    faction: stat.name,
+    value:
+      viewMode === "winRate" ? Number.parseFloat(stat.winRate.toFixed(1)) : Number.parseFloat(stat.avgScore.toFixed(1)),
+    games: stat.totalGames,
+    fill: stat.color,
+  }))
 
   const handleFactionClick = (factionId: string, factionName: string) => {
     setSelectedFaction({ id: factionId, name: factionName })
@@ -125,52 +109,48 @@ export function FactionWinRates({
     }
   }
 
-  const sortedFactionStats = useMemo(() => {
-    return [...filteredForChart].sort((a, b) => {
-      let aValue: number | string
-      let bValue: number | string
+  const sortedFactionStats = [...filteredForChart].sort((a, b) => {
+    let aValue: number | string
+    let bValue: number | string
 
-      switch (sortColumn) {
-        case "name":
-          aValue = a.name.toLowerCase()
-          bValue = b.name.toLowerCase()
-          break
-        case "games":
-          aValue = a.totalGames
-          bValue = b.totalGames
-          break
-        case "wins":
-          aValue = a.wins
-          bValue = b.wins
-          break
-        case "losses":
-          aValue = a.losses
-          bValue = b.losses
-          break
-        case "draws":
-          aValue = a.draws
-          bValue = b.draws
-          break
-        case "winRate":
-          aValue = a.winRate
-          bValue = b.winRate
-          break
-        case "avgScore":
-        default:
-          aValue = a.avgScore
-          bValue = b.avgScore
-          break
-      }
+    switch (sortColumn) {
+      case "name":
+        aValue = a.name.toLowerCase()
+        bValue = b.name.toLowerCase()
+        break
+      case "games":
+        aValue = a.totalGames
+        bValue = b.totalGames
+        break
+      case "wins":
+        aValue = a.wins
+        bValue = b.wins
+        break
+      case "losses":
+        aValue = a.losses
+        bValue = b.losses
+        break
+      case "draws":
+        aValue = a.draws
+        bValue = b.draws
+        break
+      case "winRate":
+        aValue = a.winRate
+        bValue = b.winRate
+        break
+      case "avgScore":
+      default:
+        aValue = a.avgScore
+        bValue = b.avgScore
+        break
+    }
 
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return sortDirection === "desc" ? bValue.localeCompare(aValue) : aValue.localeCompare(bValue)
-      }
+    if (typeof aValue === "string" && typeof bValue === "string") {
+      return sortDirection === "desc" ? bValue.localeCompare(aValue) : aValue.localeCompare(bValue)
+    }
 
-      return sortDirection === "desc"
-        ? (bValue as number) - (aValue as number)
-        : (aValue as number) - (bValue as number)
-    })
-  }, [filteredForChart, sortColumn, sortDirection])
+    return sortDirection === "desc" ? (bValue as number) - (aValue as number) : (aValue as number) - (bValue as number)
+  })
 
   const SortIcon = ({ column }: { column: SortColumn }) => {
     if (sortColumn !== column) {
@@ -293,8 +273,8 @@ export function FactionWinRates({
         </CardHeader>
         <CardContent className="px-2 sm:px-6">
           {chartData.length > 0 ? (
-            <div className="h-[300px] w-full sm:h-[400px]" style={{ minHeight: "300px" }}>
-              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+            <div className="h-[300px] w-full sm:h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={chartData}
                   margin={{

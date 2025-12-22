@@ -73,24 +73,6 @@ export default async function LandingPage() {
           <KofiButton />
         </div>
 
-        {/* Glass Feedback Video Section */}
-        <div className="mb-12 flex flex-col items-center justify-center rounded-lg border border-border bg-card p-6 sm:mb-16 sm:p-8">
-          <h2 className="mb-6 text-center text-2xl sm:text-3xl text-foreground font-normal">
-            The best Killteam channel if you are not aware of any other killteam channel recommends.
-          </h2>
-          <div className="w-full max-w-3xl">
-            <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-              <iframe
-                className="absolute inset-0 h-full w-full"
-                src="https://www.youtube.com/embed/KXY1GHuGO7w"
-                title="Glass honest feedback"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-              />
-            </div>
-          </div>
-        </div>
-
         {/* Features */}
         <div className="grid gap-6 sm:gap-8 md:grid-cols-3">
           <div className="rounded-lg border border-border bg-card p-5 sm:p-6">
