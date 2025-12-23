@@ -276,6 +276,8 @@ export default async function StatsPage({
           killteamWinRates={killteamWinRates}
           killzones={killzones || []}
           critops={critops || []}
+          initialKillzone={killzoneId || "all"}
+          initialCritop={critopId || "all"}
         />
       </div>
     </div>

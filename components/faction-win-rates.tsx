@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -41,13 +40,15 @@ export function FactionWinRates({
   factionStats,
   killzones,
   critops,
+  initialKillzone = "all",
+  initialCritop = "all",
 }: {
   factionStats: FactionStat[]
   killzones: Killzone[]
   critops: Critop[]
+  initialKillzone?: string
+  initialCritop?: string
 }) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
   const [showAllFactions, setShowAllFactions] = useState(false)
   const [excludeSeason1, setExcludeSeason1] = useState(false)
   const [viewMode, setViewMode] = useState<"winRate" | "avgScore">("winRate")
@@ -56,6 +57,8 @@ export function FactionWinRates({
   const [sortColumn, setSortColumn] = useState<SortColumn>("winRate")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [isMobile, setIsMobile] = useState(false)
+  const [selectedKillzone, setSelectedKillzone] = useState(initialKillzone)
+  const [selectedCritop, setSelectedCritop] = useState(initialCritop)
 
   useEffect(() => {
     const handleResize = () => {
@@ -66,26 +69,25 @@ export function FactionWinRates({
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
-  const selectedKillzone = searchParams.get("killzone") || "all"
-  const selectedCritop = searchParams.get("critop") || "all"
-
   const updateFilter = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(window.location.search)
     if (value === "all") {
       params.delete(key)
     } else {
       params.set(key, value)
     }
-    router.push(`/stats?${params.toString()}`)
+    window.location.href = `/stats?${params.toString()}`
   }
 
-  const filteredBySeason = excludeSeason1 ? factionStats.filter((stat) => stat.seasons !== 1) : factionStats
+  const filteredBySeason = excludeSeason1 ? factionStats.filter((stat) => stat.seasons !== 1) : factionStats.slice()
 
-  const filteredForChart = showAllFactions ? filteredBySeason : filteredBySeason.filter((stat) => stat.totalGames >= 3)
+  const filteredForChart = showAllFactions
+    ? filteredBySeason.slice()
+    : filteredBySeason.filter((stat) => stat.totalGames >= 3)
 
-  const sortedStats = [...filteredForChart].sort((a, b) =>
-    viewMode === "winRate" ? b.winRate - a.winRate : b.avgScore - a.avgScore,
-  )
+  const sortedStats = filteredForChart
+    .slice()
+    .sort((a, b) => (viewMode === "winRate" ? b.winRate - a.winRate : b.avgScore - a.avgScore))
 
   const chartData = sortedStats.map((stat) => ({
     faction: stat.name,
@@ -109,7 +111,7 @@ export function FactionWinRates({
     }
   }
 
-  const sortedFactionStats = [...filteredForChart].sort((a, b) => {
+  const sortedFactionStats = filteredForChart.slice().sort((a, b) => {
     let aValue: number | string
     let bValue: number | string
 
@@ -215,7 +217,13 @@ export function FactionWinRates({
               <Label htmlFor="killzone-filter" className="text-sm font-medium whitespace-nowrap">
                 Killzone:
               </Label>
-              <Select value={selectedKillzone} onValueChange={(value) => updateFilter("killzone", value)}>
+              <Select
+                value={selectedKillzone}
+                onValueChange={(value) => {
+                  setSelectedKillzone(value)
+                  updateFilter("killzone", value)
+                }}
+              >
                 <SelectTrigger id="killzone-filter" className="w-full sm:w-[200px]">
                   <SelectValue placeholder="All Killzones" />
                 </SelectTrigger>
@@ -233,7 +241,13 @@ export function FactionWinRates({
               <Label htmlFor="critop-filter" className="text-sm font-medium whitespace-nowrap">
                 CritOp:
               </Label>
-              <Select value={selectedCritop} onValueChange={(value) => updateFilter("critop", value)}>
+              <Select
+                value={selectedCritop}
+                onValueChange={(value) => {
+                  setSelectedCritop(value)
+                  updateFilter("critop", value)
+                }}
+              >
                 <SelectTrigger id="critop-filter" className="w-full sm:w-[200px]">
                   <SelectValue placeholder="All CritOps" />
                 </SelectTrigger>

@@ -11,6 +11,8 @@ type StatsContentProps = {
   killteamWinRates: any[]
   killzones: any[]
   critops: any[]
+  initialKillzone?: string
+  initialCritop?: string
 }
 
 export function StatsContent({
@@ -21,6 +23,8 @@ export function StatsContent({
   killteamWinRates,
   killzones,
   critops,
+  initialKillzone = "all",
+  initialCritop = "all",
 }: StatsContentProps) {
   return (
     <div>
@@ -83,7 +87,13 @@ export function StatsContent({
 
       {/* Kill Team Win Rates */}
       <div className="mb-6 sm:mb-8">
-        <FactionWinRates factionStats={killteamWinRates} killzones={killzones || []} critops={critops || []} />
+        <FactionWinRates
+          factionStats={killteamWinRates}
+          killzones={killzones || []}
+          critops={critops || []}
+          initialKillzone={initialKillzone}
+          initialCritop={initialCritop}
+        />
       </div>
     </div>
   )
