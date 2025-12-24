@@ -8,251 +8,178 @@ export default async function StatsPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const params = await searchParams
+  const countryId = params.country === "all" || !params.country ? undefined : params.country
+  const killzoneId = params.killzone === "all" || !params.killzone ? undefined : params.killzone
+  const critopId = params.critop === "all" || !params.critop ? undefined : params.critop
+
   const supabase = await createClient()
 
-  const today = new Date().toISOString().split("T")[0]
-  const sixMonthsAgo = new Date()
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
-  const defaultStartDate = sixMonthsAgo.toISOString().split("T")[0]
-
-  const startDate = (params.startDate as string) || defaultStartDate
-  const endDate = (params.endDate as string) || today
-  const countryId = params.country as string
-  const killzoneId = params.killzone as string
-  const critopId = params.critop as string
-
   // Fetch filter options
-  const [{ data: countries }, { data: killzones }, { data: critops }] = await Promise.all([
+  const [{ data: countries }, { data: killzones }, { data: critops }, { data: tacops }] = await Promise.all([
     supabase.from("countries").select("id, name").order("name"),
     supabase.from("killzones").select("id, name").order("name"),
     supabase.from("critops").select("id, name").order("name"),
-  ])
-
-  // Fetch games with filters
-  let gamesQuery = supabase
-    .from("games")
-    .select(
-      `
-      *,
-      player1_killteam:killteams!games_player1_killteam_id_fkey(id, name, color, seasons),
-      player2_killteam:killteams!games_player2_killteam_id_fkey(id, name, color, seasons)
-    `,
-    )
-    .gte("created_at", `${startDate}T00:00:00`)
-    .lte("created_at", `${endDate}T23:59:59`)
-    .order("created_at", { ascending: false })
-
-  if (countryId && countryId !== "all") {
-    gamesQuery = gamesQuery.eq("country_id", countryId)
-  }
-
-  if (killzoneId && killzoneId !== "all") {
-    gamesQuery = gamesQuery.eq("killzone_id", killzoneId)
-  }
-
-  if (critopId && critopId !== "all") {
-    gamesQuery = gamesQuery.eq("critop_id", critopId)
-  }
-
-  const [{ data: games }, { data: tacops }] = await Promise.all([
-    gamesQuery,
     supabase.from("tacops").select("id, name").order("name"),
   ])
 
-  const filteredGames = games || []
-
-  // Calculate total games count
-  let totalGamesQuery = supabase
-    .from("games")
-    .select("*", { count: "exact", head: true })
-    .gte("created_at", `${startDate}T00:00:00`)
-    .lte("created_at", `${endDate}T23:59:59`)
-
-  if (countryId && countryId !== "all") {
-    totalGamesQuery = totalGamesQuery.eq("country_id", countryId)
-  }
-
-  if (killzoneId && killzoneId !== "all") {
-    totalGamesQuery = totalGamesQuery.eq("killzone_id", killzoneId)
-  }
-
-  if (critopId && critopId !== "all") {
-    totalGamesQuery = totalGamesQuery.eq("critop_id", critopId)
-  }
-
-  const { count: totalGames } = await totalGamesQuery
-
-  // Calculate unique players
-  const uniquePlayerIds = new Set<string>()
-  filteredGames.forEach((game) => {
-    uniquePlayerIds.add(game.player1_id)
-    uniquePlayerIds.add(game.player2_id)
-  })
-  const totalPlayers = uniquePlayerIds.size
-
-  const killteamStats: Record<
-    string,
-    {
-      name: string
-      wins: number
-      losses: number
-      draws: number
-      totalGames: number
-      color: string
-      totalScore: number
-      seasons: number
-    }
-  > = {}
-
-  filteredGames.forEach((game) => {
-    const killteam1 = game.player1_killteam as { id: string; name: string; color: string; seasons: number }
-    const killteam2 = game.player2_killteam as { id: string; name: string; color: string; seasons: number }
-
-    const player1Total =
-      game.player1_tacop_score +
-      game.player1_critop_score +
-      game.player1_killop_score +
-      (game.player1_primary_op_score || 0)
-    const player2Total =
-      game.player2_tacop_score +
-      game.player2_critop_score +
-      game.player2_killop_score +
-      (game.player2_primary_op_score || 0)
-
-    if (!killteamStats[killteam1.id]) {
-      killteamStats[killteam1.id] = {
-        name: killteam1.name,
-        wins: 0,
-        losses: 0,
-        draws: 0,
-        totalGames: 0,
-        color: killteam1.color,
-        totalScore: 0,
-        seasons: killteam1.seasons,
-      }
-    }
-    if (!killteamStats[killteam2.id]) {
-      killteamStats[killteam2.id] = {
-        name: killteam2.name,
-        wins: 0,
-        losses: 0,
-        draws: 0,
-        totalGames: 0,
-        color: killteam2.color,
-        totalScore: 0,
-        seasons: killteam2.seasons,
-      }
-    }
-
-    // Create new objects instead of mutating existing ones
-    const stats1 = { ...killteamStats[killteam1.id] }
-    const stats2 = { ...killteamStats[killteam2.id] }
-
-    stats1.totalGames++
-    stats2.totalGames++
-
-    stats1.totalScore += player1Total
-    stats2.totalScore += player2Total
-
-    if (player1Total > player2Total) {
-      stats1.wins++
-      stats2.losses++
-    } else if (player2Total > player1Total) {
-      stats2.wins++
-      stats1.losses++
-    } else {
-      stats1.draws++
-      stats2.draws++
-    }
-
-    // Reassign the updated objects
-    killteamStats[killteam1.id] = stats1
-    killteamStats[killteam2.id] = stats2
-  })
-
-  const killteamWinRates = Object.entries(killteamStats)
-    .map(([id, stats]) => ({
+  // Fetch games with filters
+  let gamesQuery = supabase.from("games").select(
+    `
       id,
-      ...stats,
-      winRate: stats.totalGames > 0 ? (stats.wins / stats.totalGames) * 100 : 0,
-      avgScore: stats.totalGames > 0 ? stats.totalScore / stats.totalGames : 0,
-    }))
-    .sort((a, b) => b.winRate - a.winRate)
+      player1_killteam_id,
+      player2_killteam_id,
+      player1_primary_op_score,
+      player1_tacop_score,
+      player1_critop_score,
+      player1_killop_score,
+      player2_primary_op_score,
+      player2_tacop_score,
+      player2_critop_score,
+      player2_killop_score,
+      player1_tacop_id,
+      player2_tacop_id,
+      killzone_id,
+      critop_id,
+      country_id,
+      killteams_p1:killteams!player1_killteam_id(id, name, seasons),
+      killteams_p2:killteams!player2_killteam_id(id, name, seasons)
+    `,
+  )
 
-  const killzoneDistribution: Record<string, { name: string; count: number; percentage: number }> = {}
+  if (countryId) {
+    gamesQuery = gamesQuery.eq("country_id", countryId)
+  }
+  if (killzoneId) {
+    gamesQuery = gamesQuery.eq("killzone_id", killzoneId)
+  }
+  if (critopId) {
+    gamesQuery = gamesQuery.eq("critop_id", critopId)
+  }
 
-  filteredGames.forEach((game) => {
-    const killzoneId = game.killzone_id
-    if (killzoneId) {
-      const killzone = killzones?.find((k) => k.id === killzoneId)
-      if (killzone) {
-        if (!killzoneDistribution[killzoneId]) {
-          killzoneDistribution[killzoneId] = { name: killzone.name, count: 0, percentage: 0 }
-        }
-        killzoneDistribution[killzoneId] = {
-          ...killzoneDistribution[killzoneId],
-          count: killzoneDistribution[killzoneId].count + 1,
-        }
-      }
-    }
+  const { data: games } = await gamesQuery
+
+  // Calculate statistics
+  const totalGames = games?.length || 0
+  const countrySet = new Set()
+  games?.forEach((game: any) => {
+    if (game.country_id) countrySet.add(game.country_id)
   })
+  const totalPlayers = countrySet.size
 
-  const totalGamesForKillzone = filteredGames.length
-  Object.keys(killzoneDistribution).forEach((key) => {
-    const stats = killzoneDistribution[key]
-    killzoneDistribution[key] = {
-      ...stats,
-      percentage: totalGamesForKillzone > 0 ? (stats.count / totalGamesForKillzone) * 100 : 0,
-    }
+  // Killzone distribution
+  const killzoneCount: { [key: string]: number } = {}
+  games?.forEach((game: any) => {
+    const kzId = game.killzone_id
+    killzoneCount[kzId] = (killzoneCount[kzId] || 0) + 1
   })
-
-  const killzoneStats = Object.values(killzoneDistribution).sort((a, b) => b.count - a.count)
-
-  const tacopStatsMap: Record<string, { name: string; count: number; totalScore: number; avgScore: number }> = {}
-
-  filteredGames.forEach((game) => {
-    if (game.player1_tacop_id) {
-      const tacop = tacops?.find((t) => t.id === game.player1_tacop_id)
-      if (tacop) {
-        if (!tacopStatsMap[game.player1_tacop_id]) {
-          tacopStatsMap[game.player1_tacop_id] = { name: tacop.name, count: 0, totalScore: 0, avgScore: 0 }
-        }
-        const currentStats = tacopStatsMap[game.player1_tacop_id]
-        tacopStatsMap[game.player1_tacop_id] = {
-          ...currentStats,
-          count: currentStats.count + 1,
-          totalScore: currentStats.totalScore + game.player1_tacop_score,
-        }
-      }
-    }
-
-    if (game.player2_tacop_id) {
-      const tacop = tacops?.find((t) => t.id === game.player2_tacop_id)
-      if (tacop) {
-        if (!tacopStatsMap[game.player2_tacop_id]) {
-          tacopStatsMap[game.player2_tacop_id] = { name: tacop.name, count: 0, totalScore: 0, avgScore: 0 }
-        }
-        const currentStats = tacopStatsMap[game.player2_tacop_id]
-        tacopStatsMap[game.player2_tacop_id] = {
-          ...currentStats,
-          count: currentStats.count + 1,
-          totalScore: currentStats.totalScore + game.player2_tacop_score,
-        }
-      }
-    }
-  })
-
-  Object.keys(tacopStatsMap).forEach((key) => {
-    const stats = tacopStatsMap[key]
-    tacopStatsMap[key] = {
-      ...stats,
-      avgScore: stats.count > 0 ? stats.totalScore / stats.count : 0,
-    }
-  })
-
-  const topTacops = Object.values(tacopStatsMap)
-    .sort((a, b) => b.count - a.count)
+  const killzoneStats = Object.entries(killzoneCount)
+    .map(([kzId, count]) => {
+      const kz = killzones?.find((k) => k.id === Number.parseInt(kzId))
+      return { name: kz?.name || "Unknown", percentage: (count / totalGames) * 100 }
+    })
+    .sort((a, b) => b.percentage - a.percentage)
     .slice(0, 5)
+
+  // Top TacOps
+  const tacopsStats: { [key: string]: { count: number; totalScore: number } } = {}
+  games?.forEach((game: any) => {
+    // Player 1 tacop
+    if (game.player1_tacop_id) {
+      if (!tacopsStats[game.player1_tacop_id]) {
+        tacopsStats[game.player1_tacop_id] = { count: 0, totalScore: 0 }
+      }
+      tacopsStats[game.player1_tacop_id].count++
+      tacopsStats[game.player1_tacop_id].totalScore += game.player1_tacop_score || 0
+    }
+    // Player 2 tacop
+    if (game.player2_tacop_id) {
+      if (!tacopsStats[game.player2_tacop_id]) {
+        tacopsStats[game.player2_tacop_id] = { count: 0, totalScore: 0 }
+      }
+      tacopsStats[game.player2_tacop_id].count++
+      tacopsStats[game.player2_tacop_id].totalScore += game.player2_tacop_score || 0
+    }
+  })
+  const topTacops = Object.entries(tacopsStats)
+    .map(([tacId, stats]) => {
+      const tac = tacops?.find((t) => t.id === Number.parseInt(tacId))
+      return {
+        name: tac?.name || "Unknown",
+        count: stats.count,
+        avgScore: stats.totalScore / stats.count,
+      }
+    })
+    .sort((a, b) => b.avgScore - a.avgScore)
+    .slice(0, 5)
+
+  // Killteam win rates
+  const killteamStats: {
+    [key: number]: { wins: number; losses: number; draws: number; totalVP: number; games: number }
+  } = {}
+
+  games?.forEach((game: any) => {
+    const p1KtId = game.player1_killteam_id
+    const p2KtId = game.player2_killteam_id
+    const p1VP =
+      (game.player1_primary_op_score || 0) +
+      (game.player1_tacop_score || 0) +
+      (game.player1_critop_score || 0) +
+      (game.player1_killop_score || 0)
+    const p2VP =
+      (game.player2_primary_op_score || 0) +
+      (game.player2_tacop_score || 0) +
+      (game.player2_critop_score || 0) +
+      (game.player2_killop_score || 0)
+
+    if (!killteamStats[p1KtId]) {
+      killteamStats[p1KtId] = { wins: 0, losses: 0, draws: 0, totalVP: 0, games: 0 }
+    }
+    if (!killteamStats[p2KtId]) {
+      killteamStats[p2KtId] = { wins: 0, losses: 0, draws: 0, totalVP: 0, games: 0 }
+    }
+
+    killteamStats[p1KtId] = {
+      ...killteamStats[p1KtId],
+      wins: killteamStats[p1KtId].wins + (p1VP > p2VP ? 1 : 0),
+      losses: killteamStats[p1KtId].losses + (p1VP < p2VP ? 1 : 0),
+      draws: killteamStats[p1KtId].draws + (p1VP === p2VP ? 1 : 0),
+      totalVP: killteamStats[p1KtId].totalVP + p1VP,
+      games: killteamStats[p1KtId].games + 1,
+    }
+
+    killteamStats[p2KtId] = {
+      ...killteamStats[p2KtId],
+      wins: killteamStats[p2KtId].wins + (p2VP > p1VP ? 1 : 0),
+      losses: killteamStats[p2KtId].losses + (p2VP < p1VP ? 1 : 0),
+      draws: killteamStats[p2KtId].draws + (p1VP === p2VP ? 1 : 0),
+      totalVP: killteamStats[p2KtId].totalVP + p2VP,
+      games: killteamStats[p2KtId].games + 1,
+    }
+  })
+
+  const { data: allKillteams } = await supabase.from("killteams").select("id, name, seasons, color").order("name")
+
+  const killteamWinRates = (allKillteams || []).map((kt) => {
+    const stats = killteamStats[kt.id] || { wins: 0, losses: 0, draws: 0, totalVP: 0, games: 0 }
+    const totalGames = stats.games
+    const winRate = totalGames > 0 ? (stats.wins / totalGames) * 100 : 0
+    const avgVP = totalGames > 0 ? stats.totalVP / totalGames : 0
+
+    return {
+      id: kt.id.toString(), // Add id for faction details dialog
+      killteam: kt.name,
+      name: kt.name, // Add name alias for FactionWinRates component
+      seasons: kt.seasons,
+      color: kt.color || "#6366f1", // Add color with fallback
+      winRate,
+      avgVP,
+      avgScore: avgVP, // Add avgScore alias for FactionWinRates component
+      totalGames,
+      wins: stats.wins,
+      losses: stats.losses,
+      draws: stats.draws,
+    }
+  })
 
   return (
     <div className="min-h-screen bg-background">
@@ -269,15 +196,15 @@ export default async function StatsPage({
         <StatsFilters countries={countries || []} killzones={killzones || []} critops={critops || []} />
 
         <StatsContent
-          totalGames={totalGames || 0}
+          totalGames={totalGames}
           totalPlayers={totalPlayers}
           killzoneStats={killzoneStats}
           topTacops={topTacops}
           killteamWinRates={killteamWinRates}
           killzones={killzones || []}
           critops={critops || []}
-          initialKillzone={killzoneId || "all"}
-          initialCritop={critopId || "all"}
+          initialKillzone={(params.killzone as string) || "all"}
+          initialCritop={(params.critop as string) || "all"}
         />
       </div>
     </div>

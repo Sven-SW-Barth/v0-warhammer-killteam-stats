@@ -79,20 +79,23 @@ export function FactionWinRates({
     window.location.href = `/stats?${params.toString()}`
   }
 
-  const filteredBySeason = excludeSeason1 ? factionStats.filter((stat) => stat.seasons !== 1) : factionStats.slice()
+  const mutableFactionStats = factionStats.map((stat) => ({ ...stat }))
+  const filteredBySeason = excludeSeason1
+    ? mutableFactionStats.filter((stat) => stat.seasons !== 1)
+    : mutableFactionStats
 
-  const filteredForChart = showAllFactions
-    ? filteredBySeason.slice()
-    : filteredBySeason.filter((stat) => stat.totalGames >= 3)
+  const filteredForChart = showAllFactions ? filteredBySeason : filteredBySeason.filter((stat) => stat.totalGames >= 3)
 
-  const sortedStats = filteredForChart
-    .slice()
-    .sort((a, b) => (viewMode === "winRate" ? b.winRate - a.winRate : b.avgScore - a.avgScore))
+  const sortedStats = [...filteredForChart].sort((a, b) =>
+    viewMode === "winRate" ? b.winRate - a.winRate : b.avgScore - a.avgScore,
+  )
 
   const chartData = sortedStats.map((stat) => ({
     faction: stat.name,
     value:
-      viewMode === "winRate" ? Number.parseFloat(stat.winRate.toFixed(1)) : Number.parseFloat(stat.avgScore.toFixed(1)),
+      viewMode === "winRate"
+        ? Number.parseFloat((stat.winRate || 0).toFixed(1))
+        : Number.parseFloat((stat.avgScore || 0).toFixed(1)),
     games: stat.totalGames,
     fill: stat.color,
   }))
@@ -111,7 +114,7 @@ export function FactionWinRates({
     }
   }
 
-  const sortedFactionStats = filteredForChart.slice().sort((a, b) => {
+  const sortedFactionStats = [...filteredForChart].sort((a, b) => {
     let aValue: number | string
     let bValue: number | string
 
@@ -413,8 +416,8 @@ export function FactionWinRates({
                         <td className="py-2 text-right text-green-500">{stat.wins}</td>
                         <td className="py-2 text-right text-red-500">{stat.losses}</td>
                         <td className="py-2 text-right text-muted-foreground">{stat.draws}</td>
-                        <td className="py-2 text-right font-semibold">{stat.winRate.toFixed(1)}%</td>
-                        <td className="py-2 text-right font-semibold">{stat.avgScore.toFixed(1)}</td>
+                        <td className="py-2 text-right font-semibold">{(stat.winRate || 0).toFixed(1)}%</td>
+                        <td className="py-2 text-right font-semibold">{(stat.avgScore || 0).toFixed(1)}</td>
                       </tr>
                     ))}
                   </tbody>
