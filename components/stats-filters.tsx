@@ -1,104 +1,142 @@
 "use client"
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
+import { useState, useTransition } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
-import { CalendarIcon } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { CalendarIcon, Filter, X } from "lucide-react"
 import { format } from "date-fns"
 
-type Country = {
-  id: string
+type Killzone = {
+  id: number
   name: string
 }
 
-export function StatsFilters({ countries }: { countries: Country[] }) {
+type Country = {
+  id: number
+  name: string
+  code: string
+}
+
+type StatsFiltersProps = {
+  killzones: Killzone[]
+  countries: Country[]
+  initialFilters: {
+    startDate?: string
+    endDate?: string
+    countryId?: string
+    killzoneId?: string
+  }
+}
+
+export function StatsFilters({ killzones, countries, initialFilters }: StatsFiltersProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const pathname = usePathname()
+  const [isPending, startTransition] = useTransition()
 
-  const today = new Date()
-  const sixMonthsAgo = new Date()
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+  const [startDate, setStartDate] = useState<Date | undefined>(
+    initialFilters.startDate ? new Date(initialFilters.startDate) : undefined,
+  )
+  const [endDate, setEndDate] = useState<Date | undefined>(
+    initialFilters.endDate ? new Date(initialFilters.endDate) : undefined,
+  )
+  const [countryId, setCountryId] = useState<string>(initialFilters.countryId || "all")
+  const [killzoneId, setKillzoneId] = useState<string>(initialFilters.killzoneId || "all")
 
-  const startDateParam = searchParams.get("startDate")
-  const endDateParam = searchParams.get("endDate")
+  const hasActiveFilters =
+    startDate !== undefined || endDate !== undefined || countryId !== "all" || killzoneId !== "all"
 
-  const startDate = startDateParam ? new Date(startDateParam) : sixMonthsAgo
-  const endDate = endDateParam ? new Date(endDateParam) : today
-  const countryId = searchParams.get("country") || "all"
+  const applyFilters = () => {
+    const params = new URLSearchParams()
 
-  const updateFilters = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (value === "all" && key === "country") {
-      params.delete("country")
-    } else {
-      params.set(key, value)
+    if (startDate) {
+      params.set("startDate", format(startDate, "yyyy-MM-dd"))
     }
-    router.push(`${pathname}?${params.toString()}`)
+    if (endDate) {
+      params.set("endDate", format(endDate, "yyyy-MM-dd"))
+    }
+    if (countryId && countryId !== "all") {
+      params.set("countryId", countryId)
+    }
+    if (killzoneId && killzoneId !== "all") {
+      params.set("killzoneId", killzoneId)
+    }
+
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`)
+    })
   }
 
-  const updateDateFilter = (key: string, date: Date | undefined) => {
-    if (date) {
-      const dateString = format(date, "yyyy-MM-dd")
-      updateFilters(key, dateString)
-    }
+  const clearFilters = () => {
+    setStartDate(undefined)
+    setEndDate(undefined)
+    setCountryId("all")
+    setKillzoneId("all")
+
+    startTransition(() => {
+      router.push(pathname)
+    })
   }
 
   return (
     <Card className="mb-6">
       <CardContent className="pt-6">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="h-5 w-5 text-muted-foreground" />
+          <h3 className="font-semibold text-lg">Filters</h3>
+          {hasActiveFilters && (
+            <Badge variant="secondary" className="ml-auto">
+              Active
+            </Badge>
+          )}
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          {/* Start Date */}
           <div className="space-y-2">
             <Label>Start Date</Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left font-normal bg-input dark:bg-input">
+                <Button variant="outline" className="w-full justify-start text-left font-normal bg-transparent">
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(startDate, "PPP")}
+                  {startDate ? format(startDate, "PPP") : "Select date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={startDate}
-                  onSelect={(date) => updateDateFilter("startDate", date)}
-                  disabled={(date) => date > endDate || date > today}
+                  onSelect={setStartDate}
+                  disabled={(date) => (endDate ? date > endDate : false) || date > new Date()}
                   initialFocus
                 />
               </PopoverContent>
             </Popover>
           </div>
 
+          {/* End Date */}
           <div className="space-y-2">
             <Label>End Date</Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left font-normal bg-input dark:bg-input">
+                <Button variant="outline" className="w-full justify-start text-left font-normal bg-transparent">
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(endDate, "PPP")}
+                  {endDate ? format(endDate, "PPP") : "Select date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={endDate}
-                  onSelect={(date) => updateDateFilter("endDate", date)}
-                  disabled={(date) => date < startDate || date > today}
+                  onSelect={setEndDate}
+                  disabled={(date) => (startDate ? date < startDate : false) || date > new Date()}
                   initialFocus
                 />
-                <div className="border-t p-3">
-                  <Button
-                    variant="outline"
-                    className="w-full bg-input dark:bg-input"
-                    onClick={() => updateDateFilter("endDate", today)}
-                  >
-                    Today
-                  </Button>
-                </div>
               </PopoverContent>
             </Popover>
           </div>
@@ -106,8 +144,8 @@ export function StatsFilters({ countries }: { countries: Country[] }) {
           {/* Country Filter */}
           <div className="space-y-2">
             <Label htmlFor="country">Country</Label>
-            <Select value={countryId} onValueChange={(value) => updateFilters("country", value)}>
-              <SelectTrigger id="country" className="w-full">
+            <Select value={countryId} onValueChange={setCountryId}>
+              <SelectTrigger id="country">
                 <SelectValue placeholder="All Countries" />
               </SelectTrigger>
               <SelectContent>
@@ -120,6 +158,37 @@ export function StatsFilters({ countries }: { countries: Country[] }) {
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="killzone">Killzone</Label>
+            <Select value={killzoneId} onValueChange={setKillzoneId}>
+              <SelectTrigger id="killzone">
+                <SelectValue placeholder="All Killzones" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Killzones</SelectItem>
+                {killzones.map((killzone) => (
+                  <SelectItem key={killzone.id} value={String(killzone.id)}>
+                    {killzone.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          
+        </div>
+
+        <div className="flex gap-2 mt-4">
+          <Button onClick={applyFilters} disabled={isPending} className="flex-1">
+            {isPending ? "Applying..." : "Apply Filters"}
+          </Button>
+          {hasActiveFilters && (
+            <Button onClick={clearFilters} variant="outline" disabled={isPending}>
+              <X className="h-4 w-4 mr-2" />
+              Clear All
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

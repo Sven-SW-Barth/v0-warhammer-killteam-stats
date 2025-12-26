@@ -45,9 +45,7 @@ export function Navigation() {
                 className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground relative"
               >
                 Live Tracker
-                <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                  BETA
-                </span>
+                
               </Link>
             </div>
             <Button asChild>
