@@ -73,6 +73,24 @@ export default async function LandingPage() {
           <KofiButton />
         </div>
 
+        {/* YouTube Recommendation Section */}
+        <div className="mb-12 flex flex-col items-center justify-center rounded-lg border border-border bg-card p-6 text-center sm:mb-16 sm:p-8">
+          <p className="mb-6 text-pretty text-base text-muted-foreground sm:text-lg">
+            The best Killteam Channel if you are not aware of any other Killteam Channel recommends!
+          </p>
+          <div className="w-full max-w-3xl">
+            <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+              <iframe
+                src="https://www.youtube.com/embed/KXY1GHuGO7w"
+                title="YouTube video player"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="absolute inset-0 h-full w-full border-0"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Features */}
         <div className="grid gap-6 sm:gap-8 md:grid-cols-3">
           <div className="rounded-lg border border-border bg-card p-5 sm:p-6">
