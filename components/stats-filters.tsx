@@ -9,6 +9,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { CalendarIcon, Filter, X } from "lucide-react"
 import { format } from "date-fns"
 
@@ -24,17 +25,19 @@ type Country = {
 }
 
 type StatsFiltersProps = {
-  killzones: Killzone[]
-  countries: Country[]
-  initialFilters: {
+  killzones?: Killzone[]
+  countries?: Country[]
+  initialFilters?: {
     startDate?: string
     endDate?: string
     countryId?: string
     killzoneId?: string
+    showLessThan3Games?: string
+    showDeclassified?: string
   }
 }
 
-export function StatsFilters({ killzones, countries, initialFilters }: StatsFiltersProps) {
+export function StatsFilters({ killzones = [], countries = [], initialFilters = {} }: StatsFiltersProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
@@ -47,6 +50,9 @@ export function StatsFilters({ killzones, countries, initialFilters }: StatsFilt
   )
   const [countryId, setCountryId] = useState<string>(initialFilters.countryId || "all")
   const [killzoneId, setKillzoneId] = useState<string>(initialFilters.killzoneId || "all")
+
+  const [showLessThan3Games, setShowLessThan3Games] = useState<boolean>(initialFilters.showLessThan3Games !== "false")
+  const [showDeclassified, setShowDeclassified] = useState<boolean>(initialFilters.showDeclassified !== "false")
 
   const hasActiveFilters =
     startDate !== undefined || endDate !== undefined || countryId !== "all" || killzoneId !== "all"
@@ -66,6 +72,8 @@ export function StatsFilters({ killzones, countries, initialFilters }: StatsFilt
     if (killzoneId && killzoneId !== "all") {
       params.set("killzoneId", killzoneId)
     }
+    params.set("showLessThan3Games", String(showLessThan3Games))
+    params.set("showDeclassified", String(showDeclassified))
 
     startTransition(() => {
       router.push(`${pathname}?${params.toString()}`)
@@ -77,6 +85,8 @@ export function StatsFilters({ killzones, countries, initialFilters }: StatsFilt
     setEndDate(undefined)
     setCountryId("all")
     setKillzoneId("all")
+    setShowLessThan3Games(true)
+    setShowDeclassified(true)
 
     startTransition(() => {
       router.push(pathname)
@@ -96,8 +106,7 @@ export function StatsFilters({ killzones, countries, initialFilters }: StatsFilt
           )}
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-          {/* Start Date */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
             <Label>Start Date</Label>
             <Popover>
@@ -119,7 +128,6 @@ export function StatsFilters({ killzones, countries, initialFilters }: StatsFilt
             </Popover>
           </div>
 
-          {/* End Date */}
           <div className="space-y-2">
             <Label>End Date</Label>
             <Popover>
@@ -141,7 +149,6 @@ export function StatsFilters({ killzones, countries, initialFilters }: StatsFilt
             </Popover>
           </div>
 
-          {/* Country Filter */}
           <div className="space-y-2">
             <Label htmlFor="country">Country</Label>
             <Select value={countryId} onValueChange={setCountryId}>
@@ -175,8 +182,29 @@ export function StatsFilters({ killzones, countries, initialFilters }: StatsFilt
               </SelectContent>
             </Select>
           </div>
+        </div>
 
-          
+        <div className="flex items-center gap-6 border-t mt-[0 px] mb-[8 px] pt-2 mb-[ px] pb-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="show-less-than-3"
+              checked={showLessThan3Games}
+              onCheckedChange={(checked) => setShowLessThan3Games(checked as boolean)}
+            />
+            <Label htmlFor="show-less-than-3" className="text-sm font-normal cursor-pointer">
+              Display teams with less than 3 games
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="show-declassified"
+              checked={showDeclassified}
+              onCheckedChange={(checked) => setShowDeclassified(checked as boolean)}
+            />
+            <Label htmlFor="show-declassified" className="text-sm font-normal cursor-pointer">
+              Display declassified teams
+            </Label>
+          </div>
         </div>
 
         <div className="flex gap-2 mt-4">

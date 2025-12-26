@@ -5,8 +5,6 @@ import { MatchlogContent } from "@/components/matchlog-content-paginated"
 export default async function MatchlogPage() {
   const supabase = await createClient()
 
-  const { data: countries } = await supabase.from("countries").select("id, name").order("name")
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 sm:py-8">
@@ -19,7 +17,7 @@ export default async function MatchlogPage() {
           </p>
         </header>
 
-        <MatchlogFilters countries={countries || []} />
+        <MatchlogFilters countries={[]} />
 
         <MatchlogContent />
       </div>

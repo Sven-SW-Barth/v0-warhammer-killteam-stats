@@ -1,7 +1,6 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation"
-import { StatsFilters } from "@/components/stats-filters"
 import { PlayerSearchCombobox } from "@/components/player-search-combobox"
 import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
@@ -37,9 +36,7 @@ export function MatchlogFilters({ countries }: MatchlogFiltersProps) {
   }
 
   return (
-    <div className="mb-6 space-y-4">
-      <StatsFilters countries={countries} />
-
+    <div className="mb-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="flex-1">
           <label className="mb-2 block text-sm font-medium text-foreground">Filter by Player</label>

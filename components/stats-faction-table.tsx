@@ -7,6 +7,7 @@ import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 interface FactionStat {
   id: number
   name: string
+  seasons: number
   color: string
   wins: number
   losses: number
@@ -18,12 +19,14 @@ interface FactionStat {
 
 interface StatsFactionTableProps {
   factionStats: FactionStat[]
+  showLessThan3Games: boolean
+  showDeclassified: boolean
 }
 
-export function StatsFactionTable({ factionStats }: StatsFactionTableProps) {
+export function StatsFactionTable({ factionStats, showLessThan3Games, showDeclassified }: StatsFactionTableProps) {
   const [selectedFaction, setSelectedFaction] = useState<{ id: string; name: string } | null>(null)
   const [sortKey, setSortKey] = useState<"name" | "totalGames" | "wins" | "losses" | "draws" | "winRate" | "avgScore">(
-    "winRate",
+    "totalGames",
   )
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
 
@@ -36,7 +39,13 @@ export function StatsFactionTable({ factionStats }: StatsFactionTableProps) {
     }
   }
 
-  const sortedStats = [...factionStats].sort((a, b) => {
+  const filteredStats = factionStats.filter((stat) => {
+    if (!showLessThan3Games && stat.totalGames < 3) return false
+    if (!showDeclassified && stat.seasons <= 1) return false
+    return true
+  })
+
+  const sortedStats = [...filteredStats].sort((a, b) => {
     let aVal = a[sortKey]
     let bVal = b[sortKey]
 

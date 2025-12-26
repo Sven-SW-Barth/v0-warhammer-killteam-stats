@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { StatsFactionTable } from "@/components/stats-faction-table"
 import { StatsFilters } from "@/components/stats-filters"
-import { Trophy, Target, MapPin } from "lucide-react"
+import { Trophy, Target, MapPin, Map } from "lucide-react"
 
 export default async function StatsPage({
   searchParams,
@@ -15,6 +15,8 @@ export default async function StatsPage({
   const endDate = params.endDate as string | undefined
   const countryId = params.countryId as string | undefined
   const killzoneId = params.killzoneId as string | undefined
+  const showLessThan3Games = params.showLessThan3Games !== "false"
+  const showDeclassified = params.showDeclassified !== "false"
 
   const [
     { data: games },
@@ -41,7 +43,8 @@ export default async function StatsPage({
       player1_tacop_id,
       player2_tacop_id,
       country_id,
-      created_at
+      created_at,
+      map_layout
     `),
     supabase.from("killteams").select("id, name, seasons, color"),
     supabase.from("killzones").select("id, name").order("name"),
@@ -69,6 +72,7 @@ export default async function StatsPage({
   } = {}
 
   const killzoneCount: { [key: number]: number } = {}
+  const layoutCount: { [key: string]: number } = {}
   const tacopsStats: {
     [key: string]: { name: string; count: number; wins: number; games: number }
   } = {}
@@ -108,6 +112,13 @@ export default async function StatsPage({
     killteamStatsMap[p2KtId].totalVP += p2VP
     killteamStatsMap[p1KtId].games++
     killteamStatsMap[p2KtId].games++
+
+    if (game.map_layout) {
+      const layout = game.map_layout.trim()
+      if (layout) {
+        layoutCount[layout] = (layoutCount[layout] || 0) + 1
+      }
+    }
 
     if (game.killzone_id) {
       killzoneCount[game.killzone_id] = (killzoneCount[game.killzone_id] || 0) + 1
@@ -155,7 +166,7 @@ export default async function StatsPage({
       return {
         id: kt.id,
         name: kt.name,
-        seasons: kt.seasons,
+        seasons: kt.seasons || [],
         color: kt.color || "#6366f1",
         wins: stats.wins,
         losses: stats.losses,
@@ -165,7 +176,6 @@ export default async function StatsPage({
         avgScore,
       }
     })
-    .filter((f) => f.totalGames >= 3)
     .sort((a, b) => b.winRate - a.winRate)
 
   const totalGames = filteredGames?.length || 0
@@ -174,6 +184,14 @@ export default async function StatsPage({
       name: kz.name,
       count: killzoneCount[kz.id] || 0,
       percentage: totalGames > 0 ? ((killzoneCount[kz.id] || 0) / totalGames) * 100 : 0,
+    }))
+    .sort((a, b) => b.count - a.count)
+
+  const layoutDistribution = Object.entries(layoutCount)
+    .map(([layout, count]) => ({
+      name: layout,
+      count,
+      percentage: totalGames > 0 ? (count / totalGames) * 100 : 0,
     }))
     .sort((a, b) => b.count - a.count)
 
@@ -204,6 +222,8 @@ export default async function StatsPage({
     .sort((a, b) => b.games - a.games)
     .slice(0, 5)
 
+  const selectedKillzone = killzoneId ? killzones?.find((kz) => String(kz.id) === killzoneId) : null
+
   // Serialize to break React 19 freezing
   const serializedStats = JSON.parse(
     JSON.stringify({
@@ -213,14 +233,31 @@ export default async function StatsPage({
       critops: critops || [],
       top5Killteams,
       killzoneDistribution,
+      layoutDistribution,
       tacopsData,
       totalGames,
+      selectedKillzone,
     }),
   )
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8">Global Statistics</h1>
+      <h1 className="text-4xl font-bold mb-6">Global Statistics</h1>
+
+      <div className="mb-6">
+        <StatsFilters
+          killzones={serializedStats.killzones}
+          countries={serializedStats.countries}
+          initialFilters={{
+            startDate,
+            endDate,
+            countryId,
+            killzoneId,
+            showLessThan3Games: params.showLessThan3Games as string | undefined,
+            showDeclassified: params.showDeclassified as string | undefined,
+          }}
+        />
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {/* Most Played Teams */}
@@ -256,30 +293,6 @@ export default async function StatsPage({
           </div>
         </div>
 
-        {/* Killzone Distribution */}
-        <div className="bg-card rounded-lg shadow p-6 border">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <MapPin className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="text-lg font-semibold">Killzone Distribution</h3>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground border-b pb-1">
-              <span className="flex-1">Killzone</span>
-              <span className="w-16 text-right">Games</span>
-              <span className="w-16 text-right">%</span>
-            </div>
-            {serializedStats.killzoneDistribution.map((kz: any) => (
-              <div key={kz.name} className="flex items-center justify-between text-sm">
-                <span className="truncate flex-1">{kz.name}</span>
-                <span className="font-semibold w-16 text-right">{kz.count}</span>
-                <span className="text-muted-foreground w-16 text-right">{kz.percentage.toFixed(1)}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Most Played TacOps */}
         <div className="bg-card rounded-lg shadow p-6 border">
           <div className="flex items-center gap-3 mb-3">
@@ -289,43 +302,97 @@ export default async function StatsPage({
             <h3 className="text-lg font-semibold">Top TacOps</h3>
           </div>
           <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground border-b pb-1">
+              <span className="flex-1">TacOp</span>
+              <span className="w-16 text-right">Count</span>
+              <span className="w-16 text-right">Pick %</span>
+              <span className="w-16 text-right">WR %</span>
+            </div>
             {serializedStats.tacopsData.slice(0, 5).map((tacop: any) => (
-              <div key={tacop.name} className="text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="truncate">{tacop.name}</span>
-                  <span className="font-semibold">{tacop.count}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{tacop.percentage.toFixed(1)}%</span>
-                  <span className={tacop.winRate >= 50 ? "text-green-500" : "text-red-500"}>
-                    {tacop.winRate.toFixed(1)}% WR
-                  </span>
-                </div>
+              <div key={tacop.name} className="flex items-center justify-between text-sm">
+                <span className="truncate flex-1">{tacop.name}</span>
+                <span className="font-semibold w-16 text-right">{tacop.count}</span>
+                <span className="text-muted-foreground w-16 text-right">{tacop.percentage.toFixed(1)}%</span>
+                <span
+                  className={`font-semibold w-16 text-right ${tacop.winRate >= 50 ? "text-green-500" : "text-red-500"}`}
+                >
+                  {tacop.winRate.toFixed(1)}%
+                </span>
               </div>
             ))}
           </div>
         </div>
+
+        {killzoneId && serializedStats.selectedKillzone ? (
+          // Layout Distribution (when killzone is filtered)
+          <div className="bg-card rounded-lg shadow p-6 border">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Map className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Layout Distribution</h3>
+                <p className="text-xs text-muted-foreground">{serializedStats.selectedKillzone.name}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground border-b pb-1">
+                <span className="flex-1">Layout</span>
+                <span className="w-16 text-right">Games</span>
+                <span className="w-16 text-right">%</span>
+              </div>
+              {serializedStats.layoutDistribution.length > 0 ? (
+                serializedStats.layoutDistribution.map((layout: any) => (
+                  <div key={layout.name} className="flex items-center justify-between text-sm">
+                    <span className="truncate flex-1">{layout.name}</span>
+                    <span className="font-semibold w-16 text-right">{layout.count}</span>
+                    <span className="text-muted-foreground w-16 text-right">{layout.percentage.toFixed(1)}%</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No layout data available</p>
+              )}
+            </div>
+          </div>
+        ) : (
+          // Killzone Distribution (default)
+          <div className="bg-card rounded-lg shadow p-6 border">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <MapPin className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold">Killzone Distribution</h3>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground border-b pb-1">
+                <span className="flex-1">Killzone</span>
+                <span className="w-16 text-right">Games</span>
+                <span className="w-16 text-right">%</span>
+              </div>
+              {serializedStats.killzoneDistribution.map((kz: any) => (
+                <div key={kz.name} className="flex items-center justify-between text-sm">
+                  <span className="truncate flex-1">{kz.name}</span>
+                  <span className="font-semibold w-16 text-right">{kz.count}</span>
+                  <span className="text-muted-foreground w-16 text-right">{kz.percentage.toFixed(1)}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      <StatsFilters
-        killzones={serializedStats.killzones}
-        countries={serializedStats.countries}
-        initialFilters={{
-          startDate,
-          endDate,
-          countryId,
-          killzoneId,
-        }}
-      />
-
-      {/* Faction Win Rates Table */}
+      {/* Faction Statistics */}
       <div className="bg-card rounded-lg shadow p-6">
         <div className="mb-4">
-          <h2 className="text-2xl font-semibold">Faction Win Rates</h2>
+          <h2 className="text-2xl font-semibold">Faction Statistics</h2>
           <p className="text-sm text-muted-foreground mt-1">Based on {serializedStats.totalGames} total games</p>
         </div>
 
-        <StatsFactionTable factionStats={serializedStats.factionStats} />
+        <StatsFactionTable
+          factionStats={serializedStats.factionStats}
+          showLessThan3Games={showLessThan3Games}
+          showDeclassified={showDeclassified}
+        />
       </div>
     </div>
   )
