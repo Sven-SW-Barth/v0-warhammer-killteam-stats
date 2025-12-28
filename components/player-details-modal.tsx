@@ -1,15 +1,11 @@
 "use client"
 
-import { useEffect } from "react"
-
-import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { useState, useEffect } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts"
 import { format } from "date-fns"
-import { X } from "lucide-react"
+import { SimpleLineChart } from "@/components/simple-line-chart"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
 interface PlayerDetailsModalProps {
   playerId: string
@@ -645,7 +641,6 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
       <DialogContent className="!max-w-[95vw] !w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">{playerName}</DialogTitle>
-          <DialogDescription>Detailed player statistics and performance breakdown</DialogDescription>
         </DialogHeader>
 
         {loading ? (
@@ -662,52 +657,7 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
                     <CardDescription>Rating development over {eloProgression.length} games</CardDescription>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <ResponsiveContainer width="100%" height={250}>
-                      <LineChart data={eloProgression} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                        <XAxis
-                          dataKey="gameNumber"
-                          stroke="#9ca3af"
-                          tick={{ fill: "#9ca3af", fontSize: 11 }}
-                          label={{ value: "Game #", position: "insideBottom", offset: -5, fill: "#9ca3af" }}
-                        />
-                        <YAxis
-                          stroke="#9ca3af"
-                          tick={{ fill: "#9ca3af", fontSize: 11 }}
-                          domain={["dataMin - 50", "dataMax + 50"]}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#1f2937",
-                            border: "1px solid #374151",
-                            borderRadius: "6px",
-                          }}
-                          labelStyle={{ color: "#e5e7eb" }}
-                          itemStyle={{ color: "#60a5fa" }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="elo"
-                          stroke="#60a5fa"
-                          strokeWidth={2}
-                          dot={(props: any) => {
-                            const { cx, cy, payload } = props
-                            return (
-                              <circle
-                                cx={cx}
-                                cy={cy}
-                                r={3}
-                                fill={payload.hasElo ? "#60a5fa" : "#6b7280"}
-                                stroke="none"
-                              />
-                            )
-                          }}
-                          activeDot={{ r: 5 }}
-                          name="ELO Rating"
-                          connectNulls={true}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    <SimpleLineChart data={eloProgression} />
                   </CardContent>
                 </Card>
               )}
@@ -768,7 +718,7 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
                   <span className="text-sm text-muted-foreground">Filter by Kill Team:</span>
                   <Select value={selectedKillteam} onValueChange={setSelectedKillteam}>
                     <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="All Kill Teams" />
+                      <SelectValue placeholder="Select killteam" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Kill Teams</SelectItem>
@@ -779,11 +729,6 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
                       ))}
                     </SelectContent>
                   </Select>
-                  {selectedKillteam !== "all" && (
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedKillteam("all")}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
                 </div>
               </div>
 
