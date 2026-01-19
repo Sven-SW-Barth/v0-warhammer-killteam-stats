@@ -54,8 +54,12 @@ export type GameSetup = {
 }
 
 export function LiveTrackerSetupForm({ onConfirm, killzones, critops, killteams, countries }: Props) {
+  const [player1Value, setPlayer1Value] = useState<string>("")
+  const [player2Value, setPlayer2Value] = useState<string>("")
   const [player1Id, setPlayer1Id] = useState<number | null>(null)
   const [player2Id, setPlayer2Id] = useState<number | null>(null)
+  const [player1IsNew, setPlayer1IsNew] = useState(false)
+  const [player2IsNew, setPlayer2IsNew] = useState(false)
   const [player1KillteamId, setPlayer1KillteamId] = useState<string>("")
   const [player2KillteamId, setPlayer2KillteamId] = useState<string>("")
   const [killzoneId, setKillzoneId] = useState<string>("")
@@ -128,10 +132,14 @@ export function LiveTrackerSetupForm({ onConfirm, killzones, critops, killteams,
     }
   }, [countries, countryId])
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    // Validate: either have an ID or a new name
+    const player1Ready = player1Id || (player1IsNew && player1Value)
+    const player2Ready = player2Id || (player2IsNew && player2Value)
+    
     if (
-      !player1Id ||
-      !player2Id ||
+      !player1Ready ||
+      !player2Ready ||
       !player1KillteamId ||
       !player2KillteamId ||
       !killzoneId ||
@@ -141,9 +149,47 @@ export function LiveTrackerSetupForm({ onConfirm, killzones, critops, killteams,
       return
     }
 
+    // Create new players if needed
+    const supabase = (await import("@/lib/supabase/client")).createClient()
+    
+    let finalPlayer1Id = player1Id
+    let finalPlayer2Id = player2Id
+
+    if (player1IsNew && player1Value) {
+      const { data: newPlayer, error } = await supabase
+        .from("players")
+        .insert({ playertag: player1Value })
+        .select("id")
+        .single()
+      
+      if (error || !newPlayer) {
+        console.error("Failed to create player 1:", error)
+        return
+      }
+      finalPlayer1Id = newPlayer.id
+    }
+
+    if (player2IsNew && player2Value) {
+      const { data: newPlayer, error } = await supabase
+        .from("players")
+        .insert({ playertag: player2Value })
+        .select("id")
+        .single()
+      
+      if (error || !newPlayer) {
+        console.error("Failed to create player 2:", error)
+        return
+      }
+      finalPlayer2Id = newPlayer.id
+    }
+
+    if (!finalPlayer1Id || !finalPlayer2Id) {
+      return
+    }
+
     onConfirm({
-      player1Id,
-      player2Id,
+      player1Id: finalPlayer1Id,
+      player2Id: finalPlayer2Id,
       player1KillteamId,
       player2KillteamId,
       killzoneId,
@@ -156,8 +202,11 @@ export function LiveTrackerSetupForm({ onConfirm, killzones, critops, killteams,
     })
   }
 
+  // Validation: player needs ID or new name
+  const player1Ready = player1Id || (player1IsNew && player1Value)
+  const player2Ready = player2Id || (player2IsNew && player2Value)
   const isValid =
-    player1Id && player2Id && player1KillteamId && player2KillteamId && killzoneId && critOpId && countryId
+    player1Ready && player2Ready && player1KillteamId && player2KillteamId && killzoneId && critOpId && countryId
 
   return (
     <Card>
@@ -169,8 +218,23 @@ export function LiveTrackerSetupForm({ onConfirm, killzones, critops, killteams,
         <div className="space-y-2">
           <Label htmlFor="player1">Player 1</Label>
           <PlayerSearchCombobox
-            value={player1Id?.toString() || ""}
-            onValueChange={(val) => setPlayer1Id(val ? Number.parseInt(val) : null)}
+            value={player1Value}
+            onValueChange={(val) => {
+              setPlayer1Value(val)
+              // Check if val is a numeric ID (existing player) or a name (new player)
+              const numericId = Number.parseInt(val)
+              if (!Number.isNaN(numericId) && val.match(/^\d+$/)) {
+                setPlayer1Id(numericId)
+                setPlayer1IsNew(false)
+              } else if (val) {
+                // It's a new player name, we'll create them on submit
+                setPlayer1Id(null)
+                setPlayer1IsNew(true)
+              } else {
+                setPlayer1Id(null)
+                setPlayer1IsNew(false)
+              }
+            }}
             allowCreate={true}
           />
           <Select value={player1KillteamId} onValueChange={setPlayer1KillteamId}>
@@ -191,8 +255,23 @@ export function LiveTrackerSetupForm({ onConfirm, killzones, critops, killteams,
         <div className="space-y-2">
           <Label htmlFor="player2">Player 2</Label>
           <PlayerSearchCombobox
-            value={player2Id?.toString() || ""}
-            onValueChange={(val) => setPlayer2Id(val ? Number.parseInt(val) : null)}
+            value={player2Value}
+            onValueChange={(val) => {
+              setPlayer2Value(val)
+              // Check if val is a numeric ID (existing player) or a name (new player)
+              const numericId = Number.parseInt(val)
+              if (!Number.isNaN(numericId) && val.match(/^\d+$/)) {
+                setPlayer2Id(numericId)
+                setPlayer2IsNew(false)
+              } else if (val) {
+                // It's a new player name, we'll create them on submit
+                setPlayer2Id(null)
+                setPlayer2IsNew(true)
+              } else {
+                setPlayer2Id(null)
+                setPlayer2IsNew(false)
+              }
+            }}
             allowCreate={true}
           />
           <Select value={player2KillteamId} onValueChange={setPlayer2KillteamId}>
