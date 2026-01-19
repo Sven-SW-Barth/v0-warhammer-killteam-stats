@@ -15,42 +15,70 @@ export default async function StatsPage({
   const endDate = params.endDate as string | undefined
   const countryId = params.countryId as string | undefined
   const killzoneId = params.killzoneId as string | undefined
-  const showLessThan3Games = params.showLessThan3Games !== "false"
-  const showDeclassified = params.showDeclassified !== "false"
+  const showLessThan3Games = params.showLessThan3Games === "true"
+  const showDeclassified = params.showDeclassified === "true"
+
+  // Fetch all games with pagination to bypass Supabase 1000 row limit
+  const fetchAllGames = async () => {
+    const allGames: any[] = []
+    const pageSize = 1000
+    let page = 0
+    let hasMore = true
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from("games")
+        .select(`
+          id,
+          player1_killteam_id,
+          player2_killteam_id,
+          player1_primary_op_score,
+          player1_tacop_score,
+          player1_critop_score,
+          player1_killop_score,
+          player2_primary_op_score,
+          player2_tacop_score,
+          player2_critop_score,
+          player2_killop_score,
+          killzone_id,
+          critop_id,
+          player1_tacop_id,
+          player2_tacop_id,
+          country_id,
+          created_at,
+          map_layout
+        `)
+        .range(page * pageSize, (page + 1) * pageSize - 1)
+        .order("id", { ascending: true })
+
+      if (error || !data || data.length === 0) {
+        hasMore = false
+      } else {
+        allGames.push(...data)
+        hasMore = data.length === pageSize
+        page++
+      }
+    }
+
+    return allGames
+  }
 
   const [
-    { data: games },
+    games,
     { data: killteams },
     { data: killzones },
     { data: critops },
     { data: tacops },
     { data: countries },
+    { data: rulesUpdates },
   ] = await Promise.all([
-    supabase.from("games").select(`
-      id,
-      player1_killteam_id,
-      player2_killteam_id,
-      player1_primary_op_score,
-      player1_tacop_score,
-      player1_critop_score,
-      player1_killop_score,
-      player2_primary_op_score,
-      player2_tacop_score,
-      player2_critop_score,
-      player2_killop_score,
-      killzone_id,
-      critop_id,
-      player1_tacop_id,
-      player2_tacop_id,
-      country_id,
-      created_at,
-      map_layout
-    `),
+    fetchAllGames(),
     supabase.from("killteams").select("id, name, seasons, color"),
     supabase.from("killzones").select("id, name").order("name"),
     supabase.from("critops").select("id, name").order("name"),
     supabase.from("tacops").select("id, name").order("name"),
     supabase.from("countries").select("id, name, code").order("name"),
+    supabase.from("rules_updates").select("id, name, release_date").order("release_date", { ascending: true }),
   ])
 
   const filteredGames = games?.filter((game: any) => {
@@ -231,6 +259,7 @@ export default async function StatsPage({
       killzones: killzones || [],
       countries: countries || [],
       critops: critops || [],
+      rulesUpdates: rulesUpdates || [],
       top5Killteams,
       killzoneDistribution,
       layoutDistribution,
@@ -248,6 +277,7 @@ export default async function StatsPage({
         <StatsFilters
           killzones={serializedStats.killzones}
           countries={serializedStats.countries}
+          rulesUpdates={serializedStats.rulesUpdates}
           initialFilters={{
             startDate,
             endDate,

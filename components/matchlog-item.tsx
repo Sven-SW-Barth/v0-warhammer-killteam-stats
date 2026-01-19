@@ -33,10 +33,19 @@ type Game = {
   player2_tacop: { name: string } | null
 }
 
-export function MatchlogItem({ game, filteredPlayerId }: { game: Game; filteredPlayerId?: string }) {
+type MatchlogItemProps = {
+  game: Game & { player1_killteam_id?: number; player2_killteam_id?: number }
+  filteredPlayerId?: string
+  filteredKillteamId?: string | null
+}
+
+export function MatchlogItem({ game, filteredPlayerId, filteredKillteamId }: MatchlogItemProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
-  const shouldSwapPlayers = filteredPlayerId && String(game.player2_id) === filteredPlayerId
+  // Swap players if filtered player is on right side, OR if filtered killteam is on right side
+  const shouldSwapPlayers = 
+    (filteredPlayerId && String(game.player2_id) === filteredPlayerId) ||
+    (filteredKillteamId && game.player2_killteam_id && String(game.player2_killteam_id) === filteredKillteamId)
 
   const leftPlayer = shouldSwapPlayers
     ? {

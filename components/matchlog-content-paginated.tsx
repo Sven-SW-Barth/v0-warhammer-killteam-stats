@@ -24,11 +24,13 @@ export function MatchlogContent() {
   const endDate = searchParams.get("endDate")
   const country = searchParams.get("country")
   const player = searchParams.get("player")
+  const killteam = searchParams.get("killteam")
+  const opponent = searchParams.get("opponent")
 
   // Fetch initial games when filters change
   useEffect(() => {
     fetchInitialGames()
-  }, [startDate, endDate, country, player])
+  }, [startDate, endDate, country, player, killteam, opponent])
 
   const fetchInitialGames = async () => {
     setLoading(true)
@@ -51,6 +53,8 @@ export function MatchlogContent() {
 
       if (country && country !== "all") params.append("country", country)
       if (player) params.append("player", player)
+      if (killteam) params.append("killteam", killteam)
+      if (opponent) params.append("opponent", opponent)
 
       const response = await fetch(`/api/matchlog?${params.toString()}`)
       const data = await response.json()
@@ -97,6 +101,8 @@ export function MatchlogContent() {
 
       if (country && country !== "all") params.append("country", country)
       if (player) params.append("player", player)
+      if (killteam) params.append("killteam", killteam)
+      if (opponent) params.append("opponent", opponent)
 
       const response = await fetch(`/api/matchlog?${params.toString()}`)
       const data = await response.json()
@@ -150,7 +156,7 @@ export function MatchlogContent() {
 
       <div className="space-y-3">
         {games.map((game) => (
-          <MatchlogItem key={game.id} game={game} filteredPlayerId={player} />
+          <MatchlogItem key={game.id} game={game} filteredPlayerId={player} filteredKillteamId={killteam} />
         ))}
       </div>
 

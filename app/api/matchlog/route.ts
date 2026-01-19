@@ -9,6 +9,8 @@ export async function GET(request: Request) {
     const endDate = searchParams.get("endDate")
     const country = searchParams.get("country")
     const player = searchParams.get("player")
+    const killteam = searchParams.get("killteam")
+    const opponent = searchParams.get("opponent")
     const limit = 20
 
     const supabase = await createClient()
@@ -32,6 +34,17 @@ export async function GET(request: Request) {
       // Apply player filter
       if (player) {
         query = query.or(`player1_id.eq.${player},player2_id.eq.${player}`)
+      }
+
+      // Apply killteam and opponent filters
+      if (killteam && opponent) {
+        // Both killteam and opponent are selected - match specific matchup
+        query = query.or(
+          `and(player1_killteam_id.eq.${killteam},player2_killteam_id.eq.${opponent}),and(player1_killteam_id.eq.${opponent},player2_killteam_id.eq.${killteam})`
+        )
+      } else if (killteam) {
+        // Only killteam selected
+        query = query.or(`player1_killteam_id.eq.${killteam},player2_killteam_id.eq.${killteam}`)
       }
 
       return query
