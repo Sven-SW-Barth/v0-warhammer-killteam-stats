@@ -15,8 +15,8 @@ export default async function StatsPage({
   const endDate = params.endDate as string | undefined
   const countryId = params.countryId as string | undefined
   const killzoneId = params.killzoneId as string | undefined
-  const showLessThan3Games = params.showLessThan3Games === "true"
-  const showDeclassified = params.showDeclassified === "true"
+  const showLessThan3Games = params.showLessThan3Games !== "false"
+  const showDeclassified = params.showDeclassified !== "false"
 
   // Fetch all games with pagination to bypass Supabase 1000 row limit
   const fetchAllGames = async () => {

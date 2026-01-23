@@ -87,8 +87,8 @@ export function StatsFilters({ killzones = [], countries = [], rulesUpdates = []
   const [countryId, setCountryId] = useState<string>(initialFilters.countryId || "all")
   const [killzoneId, setKillzoneId] = useState<string>(initialFilters.killzoneId || "all")
 
-  const [showLessThan3Games, setShowLessThan3Games] = useState<boolean>(initialFilters.showLessThan3Games === "true")
-  const [showDeclassified, setShowDeclassified] = useState<boolean>(initialFilters.showDeclassified === "true")
+  const [showLessThan3Games, setShowLessThan3Games] = useState<boolean>(initialFilters.showLessThan3Games !== "false")
+  const [showDeclassified, setShowDeclassified] = useState<boolean>(initialFilters.showDeclassified !== "false")
 
   // Update start date when rules update selection changes
   useEffect(() => {
@@ -147,8 +147,8 @@ export function StatsFilters({ killzones = [], countries = [], rulesUpdates = []
     setEndDate(undefined)
     setCountryId("all")
     setKillzoneId("all")
-    setShowLessThan3Games(false)
-    setShowDeclassified(false)
+    setShowLessThan3Games(true)
+    setShowDeclassified(true)
 
     startTransition(() => {
       router.push(pathname)

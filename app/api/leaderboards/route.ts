@@ -9,22 +9,46 @@ export async function GET(request: NextRequest) {
 
   const { data: allPlayers } = await supabase.from("players").select("id, playertag, elo_rating, supporter")
 
-  let query = supabase.from("games").select(
-    `
-      *,
-      player1:players!games_player1_id_fkey(id, playertag, supporter),
-      player2:players!games_player2_id_fkey(id, playertag, supporter),
-      player1_killteam:killteams!games_player1_killteam_id_fkey(name),
-      player2_killteam:killteams!games_player2_killteam_id_fkey(name),
-      country:countries(id, name, code)
-    `,
-  )
+  // Fetch all games with pagination to bypass Supabase 1000 row limit
+  const fetchAllGames = async () => {
+    const allGames: any[] = []
+    const pageSize = 1000
+    let page = 0
+    let hasMore = true
 
-  if (countryId && countryId !== "all") {
-    query = query.eq("country_id", countryId)
+    while (hasMore) {
+      let query = supabase.from("games").select(
+        `
+          *,
+          player1:players!games_player1_id_fkey(id, playertag, supporter),
+          player2:players!games_player2_id_fkey(id, playertag, supporter),
+          player1_killteam:killteams!games_player1_killteam_id_fkey(name),
+          player2_killteam:killteams!games_player2_killteam_id_fkey(name),
+          country:countries(id, name, code)
+        `,
+      )
+
+      if (countryId && countryId !== "all") {
+        query = query.eq("country_id", countryId)
+      }
+
+      const { data, error } = await query
+        .order("id", { ascending: true })
+        .range(page * pageSize, (page + 1) * pageSize - 1)
+
+      if (error || !data || data.length === 0) {
+        hasMore = false
+      } else {
+        allGames.push(...data)
+        hasMore = data.length === pageSize
+        page++
+      }
+    }
+
+    return allGames
   }
 
-  const { data: games } = await query.order("created_at", { ascending: false })
+  const games = await fetchAllGames()
 
   const playerStats = new Map<
     string,

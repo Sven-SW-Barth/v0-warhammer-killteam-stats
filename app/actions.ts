@@ -146,6 +146,48 @@ export async function submitGame(formData: FormData) {
       }
     }
 
+    // Get current ELO ratings for both players
+    const { data: player1Current } = await supabase
+      .from("players")
+      .select("elo_rating")
+      .eq("id", player1Data.id)
+      .single()
+    
+    const { data: player2Current } = await supabase
+      .from("players")
+      .select("elo_rating")
+      .eq("id", player2Data.id)
+      .single()
+
+    const player1EloBefore = player1Current?.elo_rating || 1000
+    const player2EloBefore = player2Current?.elo_rating || 1000
+
+    // Calculate total scores
+    const player1TotalScore = player1PrimaryOpScore + player1TacopScore + player1CritopScore + player1KillopScore
+    const player2TotalScore = player2PrimaryOpScore + player2TacopScore + player2CritopScore + player2KillopScore
+
+    // Calculate new ELO ratings
+    const K = 32 // ELO K-factor
+    const expectedScore1 = 1 / (1 + Math.pow(10, (player2EloBefore - player1EloBefore) / 400))
+    const expectedScore2 = 1 / (1 + Math.pow(10, (player1EloBefore - player2EloBefore) / 400))
+
+    let actualScore1: number
+    let actualScore2: number
+    if (player1TotalScore > player2TotalScore) {
+      actualScore1 = 1
+      actualScore2 = 0
+    } else if (player2TotalScore > player1TotalScore) {
+      actualScore1 = 0
+      actualScore2 = 1
+    } else {
+      actualScore1 = 0.5
+      actualScore2 = 0.5
+    }
+
+    const player1EloAfter = Math.round(player1EloBefore + K * (actualScore1 - expectedScore1))
+    const player2EloAfter = Math.round(player2EloBefore + K * (actualScore2 - expectedScore2))
+
+    // Insert the game with ELO data
     const { error: gameError } = await supabase.from("games").insert({
       country_id: countryId,
       killzone_id: killzoneId,
@@ -159,6 +201,8 @@ export async function submitGame(formData: FormData) {
       player1_tacop_score: player1TacopScore,
       player1_critop_score: player1CritopScore,
       player1_killop_score: player1KillopScore,
+      player1_elo_before: player1EloBefore,
+      player1_elo_after: player1EloAfter,
       player2_id: player2Data.id,
       player2_killteam_id: player2KillteamId,
       player2_tacop_id: player2TacopId,
@@ -167,10 +211,25 @@ export async function submitGame(formData: FormData) {
       player2_tacop_score: player2TacopScore,
       player2_critop_score: player2CritopScore,
       player2_killop_score: player2KillopScore,
+      player2_elo_before: player2EloBefore,
+      player2_elo_after: player2EloAfter,
+      elo_processed: true,
       ...(customDate && { created_at: new Date(customDate).toISOString() }),
     })
 
     if (gameError) throw gameError
+
+    // Update players' ELO ratings (only if not using custom date, to avoid messing up historical data)
+    if (!customDate) {
+      await supabase.from("players").update({ elo_rating: player1EloAfter }).eq("id", player1Data.id)
+      await supabase.from("players").update({ elo_rating: player2EloAfter }).eq("id", player2Data.id)
+    } else {
+      // Custom date game was added - ELO may be inaccurate, flag for recalculation
+      await supabase
+        .from("system_settings")
+        .update({ value: "true", updated_at: new Date().toISOString() })
+        .eq("key", "elo_needs_recalc")
+    }
 
     revalidatePath("/")
     revalidatePath("/stats")
@@ -278,7 +337,13 @@ export async function approveDeletionReport(reportId: number) {
       throw updateError
     }
 
-    console.log("[SERVER][v0] Deletion report approved successfully")
+    // Game was deleted - ELO may be inaccurate, flag for recalculation
+    await supabase
+      .from("system_settings")
+      .update({ value: "true", updated_at: new Date().toISOString() })
+      .eq("key", "elo_needs_recalc")
+
+    console.log("[SERVER][v0] Deletion report approved successfully, ELO recalc flagged")
 
     revalidatePath("/admin")
     revalidatePath("/matchlog")

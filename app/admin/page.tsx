@@ -24,6 +24,7 @@ export default function AdminPage() {
   const [deletionReports, setDeletionReports] = useState<any[]>([])
   const [bugReports, setBugReports] = useState<any[]>([])
   const [isLoadingReports, setIsLoadingReports] = useState(false)
+  const [eloNeedsRecalc, setEloNeedsRecalc] = useState(false)
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -31,9 +32,25 @@ export default function AdminPage() {
       setIsAuthenticated(isAuth)
       if (isAuth) {
         loadReports()
+        loadEloStatus()
       }
     }
   }, [])
+
+  const loadEloStatus = async () => {
+    try {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "elo_needs_recalc")
+        .single()
+      
+      setEloNeedsRecalc(data?.value === "true")
+    } catch (error) {
+      console.error("[v0] Error loading ELO status:", error)
+    }
+  }
 
   const loadReports = async () => {
     setIsLoadingReports(true)
@@ -93,6 +110,7 @@ export default function AdminPage() {
           sessionStorage.setItem("admin_authenticated", "true")
         }
         loadReports()
+        loadEloStatus()
       } else {
         setError("Invalid password")
       }
@@ -127,6 +145,7 @@ export default function AdminPage() {
           type: "success",
           message: `ELO ratings recalculated successfully! Processed ${data.gamesProcessed} games. ${data.gamesSkipped > 0 ? `Skipped ${data.gamesSkipped} games (Anonymous players).` : ""}`,
         })
+        setEloNeedsRecalc(false)
       } else {
         setRecalculationMessage({
           type: "error",
@@ -213,6 +232,16 @@ export default function AdminPage() {
           </div>
 
           <div className="space-y-4">
+            {eloNeedsRecalc && (
+              <Alert variant="destructive" className="border-amber-500 bg-amber-500/10">
+                <AlertCircle className="h-4 w-4 text-amber-500" />
+                <AlertDescription className="text-amber-500">
+                  <strong>ELO Recalculation Required:</strong> Games have been deleted or historical games have been added. 
+                  ELO ratings may be inaccurate until a full recalculation is performed.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="rounded-lg bg-muted p-4">
               <h3 className="mb-2 font-medium">What does this do?</h3>
               <ul className="space-y-1 text-sm text-muted-foreground">

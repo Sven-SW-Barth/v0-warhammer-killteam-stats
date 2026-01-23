@@ -18,7 +18,7 @@ export async function POST() {
       return NextResponse.json({ success: false, error: resetError.message }, { status: 500 })
     }
 
-    // Step 2: Clear existing ELO tracking in games
+    // Step 2: Clear existing ELO tracking in games and reset elo_processed flag
     const { error: clearError } = await supabase
       .from("games")
       .update({
@@ -26,6 +26,7 @@ export async function POST() {
         player1_elo_after: null,
         player2_elo_before: null,
         player2_elo_after: null,
+        elo_processed: false,
       })
       .neq("id", 0)
 
@@ -113,7 +114,7 @@ export async function POST() {
         `[v0] Game ${game.id}: P1(${game.player1_id}) ${player1Elo} → ${player1NewElo}, P2(${game.player2_id}) ${player2Elo} → ${player2NewElo}`,
       )
 
-      // Update game record with ELO changes
+      // Update game record with ELO changes and mark as processed
       const { error: gameUpdateError } = await supabase
         .from("games")
         .update({
@@ -121,6 +122,7 @@ export async function POST() {
           player1_elo_after: player1NewElo,
           player2_elo_before: player2Elo,
           player2_elo_after: player2NewElo,
+          elo_processed: true,
         })
         .eq("id", game.id)
 
@@ -153,6 +155,12 @@ export async function POST() {
     } else {
       console.log(`[v0] Successfully updated ${playerElos.size} players`)
     }
+
+    // Step 6: Clear the elo_needs_recalc flag
+    await supabase
+      .from("system_settings")
+      .update({ value: "false", updated_at: new Date().toISOString() })
+      .eq("key", "elo_needs_recalc")
 
     console.log(
       `[v0] ELO recalculation complete: ${gamesProcessed} games processed, ${gamesSkipped} games skipped (Anonymous)`,
