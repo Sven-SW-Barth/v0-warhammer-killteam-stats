@@ -10,171 +10,33 @@ export async function POST() {
       },
     })
 
-    // Step 1: Reset all player ELOs to 1200
-    const { error: resetError } = await supabase.from("players").update({ elo_rating: 1200 }).neq("id", 0)
+    // Call the database function that handles everything server-side
+    // This avoids timeout and rate limiting issues
+    const { data, error } = await supabase.rpc("recalculate_all_elo")
 
-    if (resetError) {
-      console.error("[v0] Error resetting ELOs:", resetError)
-      return NextResponse.json({ success: false, error: resetError.message }, { status: 500 })
+    if (error) {
+      console.error("[v0] Error calling recalculate_all_elo:", error)
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
-    // Step 2: Clear existing ELO tracking in games and reset elo_processed flag
-    const { error: clearError } = await supabase
-      .from("games")
-      .update({
-        player1_elo_before: null,
-        player1_elo_after: null,
-        player2_elo_before: null,
-        player2_elo_after: null,
-        elo_processed: false,
-      })
-      .neq("id", 0)
-
-    if (clearError) {
-      console.error("[v0] Error clearing game ELOs:", clearError)
-      return NextResponse.json({ success: false, error: clearError.message }, { status: 500 })
-    }
-
-    // Step 3: Fetch all games with player information in chronological order
-    const { data: games, error: gamesError } = await supabase
-      .from("games")
-      .select(`
-        *,
-        player1:players!player1_id(id, playertag),
-        player2:players!player2_id(id, playertag)
-      `)
-      .order("created_at", { ascending: true })
-
-    if (gamesError || !games) {
-      console.error("[v0] Error fetching games:", gamesError)
-      return NextResponse.json({ success: false, error: gamesError?.message || "No games found" }, { status: 500 })
-    }
-
-    // Step 4: Process each game and calculate ELO changes
-    const playerElos = new Map<number, number>()
-    const playerGamesPlayed = new Map<number, number>()
-
-    let gamesProcessed = 0
-    let gamesSkipped = 0
-
-    for (const game of games) {
-      const player1Tag = (game.player1 as any)?.playertag
-      const player2Tag = (game.player2 as any)?.playertag
-
-      if (player1Tag === "Anonymous" || player2Tag === "Anonymous") {
-        console.log(`[v0] Skipping game ${game.id} - Anonymous player detected`)
-        gamesSkipped++
-        continue
-      }
-
-      // Get current ELO ratings (from our map or default 1200)
-      const player1Elo = playerElos.get(game.player1_id) || 1200
-      const player2Elo = playerElos.get(game.player2_id) || 1200
-
-      // Get games played count for K-factor calculation
-      const player1GamesPlayed = playerGamesPlayed.get(game.player1_id) || 0
-      const player2GamesPlayed = playerGamesPlayed.get(game.player2_id) || 0
-
-      const player1KFactor = player1GamesPlayed < 20 ? 16 : 12
-      const player2KFactor = player2GamesPlayed < 20 ? 16 : 12
-
-      // Calculate total scores
-      const player1Total =
-        game.player1_tacop_score +
-        game.player1_critop_score +
-        game.player1_killop_score +
-        (game.player1_primary_op_score || 0)
-      const player2Total =
-        game.player2_tacop_score +
-        game.player2_critop_score +
-        game.player2_killop_score +
-        (game.player2_primary_op_score || 0)
-
-      const player1Expected = 1 / (1 + Math.pow(10, (player2Elo - player1Elo) / 500))
-      const player2Expected = 1 / (1 + Math.pow(10, (player1Elo - player2Elo) / 500))
-
-      // Determine actual scores (1 for win, 0 for loss, 0.5 for draw)
-      let player1Actual: number, player2Actual: number
-      if (player1Total > player2Total) {
-        player1Actual = 1
-        player2Actual = 0
-      } else if (player2Total > player1Total) {
-        player1Actual = 0
-        player2Actual = 1
-      } else {
-        player1Actual = 0.5
-        player2Actual = 0.5
-      }
-
-      // Calculate new ELO ratings
-      const player1NewElo = Math.round(player1Elo + player1KFactor * (player1Actual - player1Expected))
-      const player2NewElo = Math.round(player2Elo + player2KFactor * (player2Actual - player2Expected))
-
-      console.log(
-        `[v0] Game ${game.id}: P1(${game.player1_id}) ${player1Elo} → ${player1NewElo}, P2(${game.player2_id}) ${player2Elo} → ${player2NewElo}`,
-      )
-
-      // Update game record with ELO changes and mark as processed
-      const { error: gameUpdateError } = await supabase
-        .from("games")
-        .update({
-          player1_elo_before: player1Elo,
-          player1_elo_after: player1NewElo,
-          player2_elo_before: player2Elo,
-          player2_elo_after: player2NewElo,
-          elo_processed: true,
-        })
-        .eq("id", game.id)
-
-      if (gameUpdateError) {
-        console.error(`[v0] Error updating game ${game.id}:`, gameUpdateError)
-      }
-
-      // Update our maps
-      playerElos.set(game.player1_id, player1NewElo)
-      playerElos.set(game.player2_id, player2NewElo)
-      playerGamesPlayed.set(game.player1_id, player1GamesPlayed + 1)
-      playerGamesPlayed.set(game.player2_id, player2GamesPlayed + 1)
-
-      gamesProcessed++
-    }
-
-    console.log(`[v0] Updating ${playerElos.size} player ELO ratings...`)
-
-    // Step 5: Update all player ELO ratings in the database
-    const updatePromises = Array.from(playerElos.entries()).map(([playerId, elo]) => {
-      return supabase.from("players").update({ elo_rating: elo }).eq("id", playerId)
-    })
-
-    const updateResults = await Promise.all(updatePromises)
-
-    // Check for any errors in the updates
-    const failedUpdates = updateResults.filter((result) => result.error)
-    if (failedUpdates.length > 0) {
-      console.error("[v0] Some player updates failed:", failedUpdates)
-    } else {
-      console.log(`[v0] Successfully updated ${playerElos.size} players`)
-    }
-
-    // Step 6: Clear the elo_needs_recalc flag
+    // Clear the elo_needs_recalc flag
     await supabase
       .from("system_settings")
       .update({ value: "false", updated_at: new Date().toISOString() })
       .eq("key", "elo_needs_recalc")
 
-    console.log(
-      `[v0] ELO recalculation complete: ${gamesProcessed} games processed, ${gamesSkipped} games skipped (Anonymous)`,
-    )
-
+    // The function returns: { games_processed, games_skipped, players_updated }
     return NextResponse.json({
       success: true,
-      gamesProcessed,
-      gamesSkipped,
-      totalGames: games.length,
-      playersUpdated: playerElos.size,
+      gamesProcessed: data?.games_processed || 0,
+      gamesSkipped: data?.games_skipped || 0,
+      playersUpdated: data?.players_updated || 0,
     })
   } catch (error) {
     console.error("[v0] ELO recalculation error:", error)
-    return NextResponse.json({ success: false, error: "Failed to recalculate ELO ratings" }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 },
+    )
   }
 }
