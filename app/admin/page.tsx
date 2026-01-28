@@ -6,7 +6,9 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Shield, Lock, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Shield, Lock, RefreshCw, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AdminReportsTables } from "@/components/admin-reports-tables"
 import { createClient } from "@/lib/supabase/client"
@@ -25,6 +27,9 @@ export default function AdminPage() {
   const [bugReports, setBugReports] = useState<any[]>([])
   const [isLoadingReports, setIsLoadingReports] = useState(false)
   const [eloNeedsRecalc, setEloNeedsRecalc] = useState(false)
+  const [serviceAlertEnabled, setServiceAlertEnabled] = useState(false)
+  const [serviceAlertSeverity, setServiceAlertSeverity] = useState<"low" | "medium" | "high">("low")
+  const [isSavingAlert, setIsSavingAlert] = useState(false)
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -33,6 +38,7 @@ export default function AdminPage() {
       if (isAuth) {
         loadReports()
         loadEloStatus()
+        loadServiceAlertStatus()
       }
     }
   }, [])
@@ -49,6 +55,54 @@ export default function AdminPage() {
       setEloNeedsRecalc(data?.value === "true")
     } catch (error) {
       console.error("[v0] Error loading ELO status:", error)
+    }
+  }
+
+  const loadServiceAlertStatus = async () => {
+    try {
+      const supabase = createClient()
+      const { data: enabledData } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "service_alert_enabled")
+        .single()
+      
+      const { data: severityData } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "service_alert_severity")
+        .single()
+      
+      setServiceAlertEnabled(enabledData?.value === "true")
+      if (severityData?.value) {
+        setServiceAlertSeverity(severityData.value as "low" | "medium" | "high")
+      }
+    } catch (error) {
+      console.error("[v0] Error loading service alert status:", error)
+    }
+  }
+
+  const handleServiceAlertChange = async (enabled: boolean, severity: "low" | "medium" | "high") => {
+    setIsSavingAlert(true)
+    try {
+      const supabase = createClient()
+      
+      await supabase
+        .from("system_settings")
+        .update({ value: enabled ? "true" : "false", updated_at: new Date().toISOString() })
+        .eq("key", "service_alert_enabled")
+      
+      await supabase
+        .from("system_settings")
+        .update({ value: severity, updated_at: new Date().toISOString() })
+        .eq("key", "service_alert_severity")
+      
+      setServiceAlertEnabled(enabled)
+      setServiceAlertSeverity(severity)
+    } catch (error) {
+      console.error("[v0] Error saving service alert:", error)
+    } finally {
+      setIsSavingAlert(false)
     }
   }
 
@@ -111,6 +165,7 @@ export default function AdminPage() {
         }
         loadReports()
         loadEloStatus()
+        loadServiceAlertStatus()
       } else {
         setError("Invalid password")
       }
@@ -217,6 +272,93 @@ export default function AdminPage() {
       </div>
 
       <div className="space-y-6">
+        <Card className="p-6">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Service Alert Banner
+            </h2>
+            <p className="text-sm text-muted-foreground">Display a service alert banner to all users</p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="service-alert-toggle" className="text-base font-medium">
+                  Enable Service Alert
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Show a banner at the top of all pages
+                </p>
+              </div>
+              <Switch
+                id="service-alert-toggle"
+                checked={serviceAlertEnabled}
+                onCheckedChange={(checked) => handleServiceAlertChange(checked, serviceAlertSeverity)}
+                disabled={isSavingAlert}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="severity-select">Alert Severity</Label>
+              <Select
+                value={serviceAlertSeverity}
+                onValueChange={(value: "low" | "medium" | "high") => handleServiceAlertChange(serviceAlertEnabled, value)}
+                disabled={isSavingAlert}
+              >
+                <SelectTrigger id="severity-select">
+                  <SelectValue placeholder="Select severity" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 rounded-full bg-yellow-500" />
+                      Low - Minor issue, quick fix expected
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="medium">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 rounded-full bg-orange-500" />
+                      Medium - Working on a fix
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="high">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 rounded-full bg-red-500" />
+                      High - Major issue, may take time to resolve
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="rounded-lg bg-muted p-4">
+              <h3 className="mb-2 font-medium">Banner Preview</h3>
+              {serviceAlertEnabled ? (
+                <div className={`rounded-md p-3 text-sm ${
+                  serviceAlertSeverity === "low" 
+                    ? "bg-yellow-500/20 text-yellow-200 border border-yellow-500/30" 
+                    : serviceAlertSeverity === "medium"
+                    ? "bg-orange-500/20 text-orange-200 border border-orange-500/30"
+                    : "bg-red-500/20 text-red-200 border border-red-500/30"
+                }`}>
+                  {serviceAlertSeverity === "low" && (
+                    <>Service Alert: We are aware of an issue affecting <strong>KT Open Play</strong> and are working on a fix. Thanks for your patience, it will be up and running in no time!</>
+                  )}
+                  {serviceAlertSeverity === "medium" && (
+                    <>Service Alert: We are aware of an issue affecting <strong>KT Open Play</strong> and are actively working on a fix. Thanks for your patience!</>
+                  )}
+                  {serviceAlertSeverity === "high" && (
+                    <>Service Alert: We are aware of a significant issue affecting <strong>KT Open Play</strong>. Our team is working hard to resolve this, but it may take some time. We appreciate your patience and understanding.</>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Banner is currently disabled</p>
+              )}
+            </div>
+          </div>
+        </Card>
+
         {isLoadingReports ? (
           <Card className="p-6">
             <p className="text-center text-muted-foreground">Loading reports...</p>
