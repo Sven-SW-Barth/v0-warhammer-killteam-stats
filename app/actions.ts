@@ -159,8 +159,8 @@ export async function submitGame(formData: FormData) {
       .eq("id", player2Data.id)
       .single()
 
-    const player1EloBefore = player1Current?.elo_rating || 1000
-    const player2EloBefore = player2Current?.elo_rating || 1000
+    const player1EloBefore = player1Current?.elo_rating || 1200
+    const player2EloBefore = player2Current?.elo_rating || 1200
 
     // Calculate total scores
     const player1TotalScore = player1PrimaryOpScore + player1TacopScore + player1CritopScore + player1KillopScore
