@@ -25,12 +25,13 @@ export async function POST() {
       .update({ value: "false", updated_at: new Date().toISOString() })
       .eq("key", "elo_needs_recalc")
 
-    // The function returns: { games_processed, games_skipped, players_updated }
+    // The RPC returns an array of rows, so we need to access the first element
+    const result = Array.isArray(data) ? data[0] : data
     return NextResponse.json({
       success: true,
-      gamesProcessed: data?.games_processed || 0,
-      gamesSkipped: data?.games_skipped || 0,
-      playersUpdated: data?.players_updated || 0,
+      gamesProcessed: result?.games_processed || 0,
+      gamesSkipped: result?.games_skipped || 0,
+      playersUpdated: result?.players_updated || 0,
     })
   } catch (error) {
     console.error("[v0] ELO recalculation error:", error)
