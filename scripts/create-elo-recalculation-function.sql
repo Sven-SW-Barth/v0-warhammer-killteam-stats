@@ -25,7 +25,7 @@ BEGIN
   SELECT id INTO anonymous_id FROM players WHERE playertag = 'Anonymous' LIMIT 1;
 
   -- Step 1: Reset all player ELOs to 1200
-  UPDATE players SET elo_rating = 1200;
+  UPDATE players SET elo_rating = 1200 WHERE id IS NOT NULL;
   GET DIAGNOSTICS v_players_updated = ROW_COUNT;
 
   -- Step 2: Clear all game ELO data
@@ -34,7 +34,8 @@ BEGIN
     player1_elo_after = NULL,
     player2_elo_before = NULL,
     player2_elo_after = NULL,
-    elo_processed = FALSE;
+    elo_processed = FALSE
+  WHERE id IS NOT NULL;
 
   -- Step 3: Create a temp table to track current player ELOs (faster than repeated lookups)
   CREATE TEMP TABLE IF NOT EXISTS temp_player_elos (

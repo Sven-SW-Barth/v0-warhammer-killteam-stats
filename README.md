@@ -31,7 +31,7 @@ Installation
 2. Install dependencies: ```bash npm install ```
 3. Set up environment variables:
 Create a .env.local file in the root directory with the following variables:
-```env```
+\`\`\`env```
 Supabase Configuration
 
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -40,7 +40,7 @@ Supabase Database (automatically provided by Supabase integration)
 POSTGRES_URL=your_postgres_connection_string POSTGRES_PRISMA_URL=your_postgres_prisma_url POSTGRES_URL_NON_POOLING=your_postgres_non_pooling_url POSTGRES_USER=your_postgres_user POSTGRES_PASSWORD=your_postgres_password POSTGRES_DATABASE=your_postgres_database POSTGRES_HOST=your_postgres_host ```
 1. Set up the database:
 Run the SQL scripts in order in your Supabase SQL Editor:
-```bash scripts/001_create_tables.sql scripts/002_seed_factions.sql scripts/003_update_schema.sql scripts/004_seed_reference_data.sql scripts/005_add_primary_op.sql scripts/007_add_elo_system.sql ```
+\`\`\`bash scripts/001_create_tables.sql scripts/002_seed_factions.sql scripts/003_update_schema.sql scripts/004_seed_reference_data.sql scripts/005_add_primary_op.sql scripts/007_add_elo_system.sql ```
 1. Run the development server: ```bash npm run dev ```
 2. Open http://localhost:3000 in your browser.
 Database Schema

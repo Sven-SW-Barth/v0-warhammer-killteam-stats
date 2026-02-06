@@ -38,18 +38,9 @@ export function MatchlogContent() {
     try {
       const params = new URLSearchParams()
 
-      // Apply date defaults if not provided
+      // Only apply date filters if explicitly provided
       if (startDate) params.append("startDate", startDate)
-      else {
-        const sixMonthsAgo = new Date()
-        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
-        params.append("startDate", sixMonthsAgo.toISOString())
-      }
-
       if (endDate) params.append("endDate", endDate)
-      else {
-        params.append("endDate", new Date().toISOString())
-      }
 
       if (country && country !== "all") params.append("country", country)
       if (player) params.append("player", player)
@@ -88,16 +79,7 @@ export function MatchlogContent() {
 
       // Include all filters
       if (startDate) params.append("startDate", startDate)
-      else {
-        const sixMonthsAgo = new Date()
-        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
-        params.append("startDate", sixMonthsAgo.toISOString())
-      }
-
       if (endDate) params.append("endDate", endDate)
-      else {
-        params.append("endDate", new Date().toISOString())
-      }
 
       if (country && country !== "all") params.append("country", country)
       if (player) params.append("player", player)
