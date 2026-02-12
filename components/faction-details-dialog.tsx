@@ -516,7 +516,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-[95vw] !w-[95vw] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-[95vw] md:w-[95vw] max-h-[90vh] overflow-y-auto p-4 md:p-6">
         <DialogHeader>
           <DialogTitle className="text-xl">{factionName}</DialogTitle>
           <DialogDescription className="text-sm">
@@ -570,7 +570,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
             </Card>
 
             {/* Overview Stats */}
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-3 gap-2 md:gap-4">
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm text-muted-foreground">Total Games</CardTitle>
@@ -617,13 +617,13 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                       .sort((a, b) => a.winRate - b.winRate)
                       .slice(0, 3)
                       .map((stat, index) => (
-                        <div key={stat.name} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-muted-foreground w-4">#{index + 1}</span>
-                            <span className="text-sm font-medium">{stat.name}</span>
+                        <div key={stat.name} className="flex items-center justify-between p-2 rounded-lg bg-muted/50 gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-xs font-semibold text-muted-foreground shrink-0">#{index + 1}</span>
+                            <span className="text-sm font-medium truncate">{stat.name}</span>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs text-muted-foreground">{stat.games} games</span>
+                          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+                            <span className="text-xs text-muted-foreground hidden md:inline">{stat.games}g</span>
                             <span
                               className={`text-sm font-bold ${stat.winRate < 50 ? "text-red-500" : "text-muted-foreground"}`}
                             >
@@ -657,13 +657,13 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                       .sort((a, b) => b.winRate - a.winRate)
                       .slice(0, 3)
                       .map((stat, index) => (
-                        <div key={stat.name} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-muted-foreground w-4">#{index + 1}</span>
-                            <span className="text-sm font-medium">{stat.name}</span>
+                        <div key={stat.name} className="flex items-center justify-between p-2 rounded-lg bg-muted/50 gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-xs font-semibold text-muted-foreground shrink-0">#{index + 1}</span>
+                            <span className="text-sm font-medium truncate">{stat.name}</span>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs text-muted-foreground">{stat.games} games</span>
+                          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+                            <span className="text-xs text-muted-foreground hidden md:inline">{stat.games}g</span>
                             <span
                               className={`text-sm font-bold ${stat.winRate >= 50 ? "text-green-500" : "text-muted-foreground"}`}
                             >
@@ -687,7 +687,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                 <CardTitle className="text-base">Critical Operations</CardTitle>
                 <CardDescription className="text-xs">CritOp performance and average scores</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -742,7 +742,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                 <CardTitle className="text-base">Tactical Operations</CardTitle>
                 <CardDescription className="text-xs">TacOp usage, average scores, and win rates</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -808,7 +808,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                   <CardTitle className="text-base">Primary Operations</CardTitle>
                   <CardDescription className="text-xs">Primary Op usage and average scores</CardDescription>
                 </CardHeader>
-                <CardContent className="pt-0">
+                <CardContent className="pt-0 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -854,7 +854,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                 <CardTitle className="text-base">Kill Zones</CardTitle>
                 <CardDescription className="text-xs">Performance by Kill Zone map</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -915,7 +915,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                 <CardTitle className="text-base">Matchup Statistics</CardTitle>
                 <CardDescription className="text-xs">Performance against other factions</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
