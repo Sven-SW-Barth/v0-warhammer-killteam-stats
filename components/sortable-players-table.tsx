@@ -107,7 +107,7 @@ export function SortablePlayersTable({ players }: { players: Player[] }) {
               checked={hideUnder3Games}
               onCheckedChange={(checked) => setHideUnder3Games(checked === true)}
             />
-            <Label htmlFor="hide-under-3" className="text-sm font-normal cursor-pointer whitespace-nowrap">
+            <Label htmlFor="hide-under-3" className="text-sm font-normal cursor-pointer">
               Hide players with less than 3 games
             </Label>
           </div>
