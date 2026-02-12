@@ -516,7 +516,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-[calc(100%-2rem)] md:!max-w-[95vw] max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 md:p-6">
+      <DialogContent className="dialog-wide max-h-[90vh] overflow-y-auto p-4 md:p-6">
         <DialogHeader>
           <DialogTitle className="text-xl">{factionName}</DialogTitle>
           <DialogDescription className="text-sm">
