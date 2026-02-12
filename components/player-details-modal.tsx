@@ -87,43 +87,6 @@ interface EnemyKillteamStats {
   winRate: number
 }
 
-function NecronSymbol({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 100 140"
-      fill="currentColor"
-      className={className}
-      aria-hidden="true"
-    >
-      {/* Top crescent */}
-      <path d="M38 8 A16 16 0 0 1 62 8 L58 14 A10 10 0 0 0 42 14 Z" />
-      {/* Vertical stem top */}
-      <rect x="47" y="14" width="6" height="18" />
-      {/* Central circle (outer) */}
-      <circle cx="50" cy="52" r="18" />
-      {/* Central circle (hole) */}
-      <circle cx="50" cy="52" r="9" fill="var(--background, #09090b)" />
-      {/* Spoke: top-left */}
-      <rect x="-1.5" y="-22" width="6" height="22" rx="1" transform="translate(50,52) rotate(-45)" />
-      {/* Spoke: top-right */}
-      <rect x="-4.5" y="-22" width="6" height="22" rx="1" transform="translate(50,52) rotate(45)" />
-      {/* Spoke: left */}
-      <rect x="47" y="52" width="6" height="22" rx="1" transform="rotate(-90,50,52)" />
-      {/* Spoke: right */}
-      <rect x="47" y="52" width="6" height="22" rx="1" transform="rotate(90,50,52)" />
-      {/* Spoke: bottom-left */}
-      <rect x="-1.5" y="0" width="6" height="22" rx="1" transform="translate(50,52) rotate(-225)" />
-      {/* Spoke: bottom-right */}
-      <rect x="-4.5" y="0" width="6" height="22" rx="1" transform="translate(50,52) rotate(225)" />
-      {/* Vertical stem bottom */}
-      <rect x="47" y="70" width="6" height="35" />
-      {/* Bottom feet */}
-      <rect x="40" y="98" width="6" height="16" rx="1" transform="rotate(20,43,98)" />
-      <rect x="54" y="98" width="6" height="16" rx="1" transform="rotate(-20,57,98)" />
-    </svg>
-  )
-}
-
 export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }: PlayerDetailsModalProps) {
   const [loading, setLoading] = useState(true)
   const [tacOpStats, setTacOpStats] = useState<TacOpStats[]>([])
@@ -682,7 +645,12 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
             {playerName.toLowerCase() === "effdeedee" && (
-              <NecronSymbol className="h-7 w-7 text-green-500 shrink-0" />
+              <img
+                src="/necron-symbol.svg"
+                alt=""
+                className="h-7 w-7 shrink-0"
+                aria-hidden="true"
+              />
             )}
             {playerName}
           </DialogTitle>
