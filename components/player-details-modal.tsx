@@ -643,7 +643,17 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
         style={{ maxWidth: "min(95vw, calc(100vw - 2rem))", width: "100%" }}
       >
         <DialogHeader>
-          <DialogTitle className="text-2xl">{playerName}</DialogTitle>
+          <DialogTitle className="text-2xl flex items-center gap-2">
+            {playerName.toLowerCase() === "effdeedee" && (
+              <img
+                src="/necron-symbol.svg"
+                alt=""
+                className="h-7 w-7 shrink-0"
+                aria-hidden="true"
+              />
+            )}
+            {playerName}
+          </DialogTitle>
         </DialogHeader>
 
         {loading ? (
