@@ -945,7 +945,7 @@ export function GameEntryForm({ players, countries, killteams, killzones, tacops
               </div>
             </div>
 
-            {/* Competitive Play & Notes */}
+            {/* Tournament Match & Notes */}
             <div className="space-y-4 rounded-lg border border-border p-4">
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -955,7 +955,7 @@ export function GameEntryForm({ players, countries, killteams, killzones, tacops
                 />
                 <Label htmlFor="competitive_play" className="flex items-center gap-2 text-sm font-normal cursor-pointer">
                   <Trophy className="h-4 w-4 text-amber-500" />
-                  Competitive Play
+                  Tournament Match
                 </Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
