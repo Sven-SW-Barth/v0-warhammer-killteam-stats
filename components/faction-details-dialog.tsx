@@ -95,7 +95,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
     direction: "desc",
   })
   const [matchupSort, setMatchupSort] = useState<{ key: string; direction: "asc" | "desc" }>({
-    key: "games",
+    key: "winRate",
     direction: "desc",
   })
 
@@ -573,31 +573,25 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
             </Card>
 
             {/* Overview Stats */}
-            <div className="grid grid-cols-3 gap-2 md:gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4">
               <Card>
-                <CardHeader className="p-3 pb-1 md:p-6 md:pb-2">
-                  <CardTitle className="text-xs md:text-sm text-muted-foreground">Games</CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-                  <div className="text-xl md:text-2xl font-bold">{overviewStats.totalGames}</div>
+                <CardContent className="flex items-center justify-between p-3 md:block md:p-6">
+                  <span className="text-sm text-muted-foreground md:text-xs">Games</span>
+                  <span className="text-xl font-bold md:mt-1 md:block md:text-2xl">{overviewStats.totalGames}</span>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="p-3 pb-1 md:p-6 md:pb-2">
-                  <CardTitle className="text-xs md:text-sm text-muted-foreground">Win Rate</CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-                  <div className="text-xl md:text-2xl font-bold">{overviewStats.winRate.toFixed(1)}%</div>
+                <CardContent className="flex items-center justify-between p-3 md:block md:p-6">
+                  <span className="text-sm text-muted-foreground md:text-xs">Win Rate</span>
+                  <span className="text-xl font-bold md:mt-1 md:block md:text-2xl">{overviewStats.winRate.toFixed(1)}%</span>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="p-3 pb-1 md:p-6 md:pb-2">
-                  <CardTitle className="text-xs md:text-sm text-muted-foreground">Avg Score</CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-                  <div className="text-xl md:text-2xl font-bold">{overviewStats.avgScore.toFixed(1)}</div>
+                <CardContent className="flex items-center justify-between p-3 md:block md:p-6">
+                  <span className="text-sm text-muted-foreground md:text-xs">Avg Score</span>
+                  <span className="text-xl font-bold md:mt-1 md:block md:text-2xl">{overviewStats.avgScore.toFixed(1)}</span>
                 </CardContent>
               </Card>
             </div>
