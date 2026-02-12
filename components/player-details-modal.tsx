@@ -638,7 +638,10 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-[95vw] !w-[95vw] max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 md:p-6"
+        style={{ maxWidth: "min(95vw, calc(100vw - 2rem))", width: "100%" }}
+      >
         <DialogHeader>
           <DialogTitle className="text-2xl">{playerName}</DialogTitle>
         </DialogHeader>
@@ -648,7 +651,7 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
             <div className="text-muted-foreground">Loading player statistics...</div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0 overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {eloProgression.length > 0 && (
                 <Card className="lg:col-span-2">
@@ -712,12 +715,12 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <h3 className="text-lg font-semibold">Operations Statistics</h3>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-2">
                   <span className="text-sm text-muted-foreground">Filter by Kill Team:</span>
                   <Select value={selectedKillteam} onValueChange={setSelectedKillteam}>
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-full md:w-[200px]">
                       <SelectValue placeholder="Select killteam" />
                     </SelectTrigger>
                     <SelectContent>
@@ -853,16 +856,16 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
                         enemyKillteamStats.map((stat) => (
                           <div
                             key={stat.name}
-                            className="flex justify-between items-center text-sm border rounded-lg p-2"
+                            className="text-sm border rounded-lg p-2"
                           >
-                            <span className="font-medium truncate flex-1">{stat.name}</span>
-                            <div className="flex items-center gap-2 text-xs">
+                            <span className="font-medium block">{stat.name}</span>
+                            <div className="flex items-center gap-2 text-xs mt-1">
                               <span className="text-muted-foreground">{stat.games}G</span>
                               <span className="text-green-600">{stat.wins}W</span>
                               <span className="text-gray-500">{stat.draws}D</span>
                               <span className="text-red-600">{stat.losses}L</span>
                               <span
-                                className={`${getWinRateColor(stat.winRate)} font-semibold min-w-[45px] text-right`}
+                                className={`${getWinRateColor(stat.winRate)} font-semibold ml-auto`}
                               >
                                 {stat.winRate.toFixed(0)}%
                               </span>

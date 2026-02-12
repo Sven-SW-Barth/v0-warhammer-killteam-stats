@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { format } from "date-fns"
-import { ChevronDown, ChevronRight } from "lucide-react"
+import { ChevronDown, ChevronRight, Trophy } from "lucide-react"
 import { GameActionsMenu } from "./game-actions-menu"
 import { PuritySealIcon } from "./purity-seal-icon"
 
@@ -31,6 +31,8 @@ type Game = {
   player2_killteam: { name: string } | null
   player1_tacop: { name: string } | null
   player2_tacop: { name: string } | null
+  competitive_play?: boolean
+  notes?: string | null
 }
 
 type MatchlogItemProps = {
@@ -141,7 +143,10 @@ export function MatchlogItem({ game, filteredPlayerId, filteredKillteamId }: Mat
                   {leftTotal}
                 </span>
               </div>
-              <div className="text-center text-xs text-muted-foreground">vs</div>
+              <div className="flex flex-col items-center gap-0.5">
+                {game.competitive_play && <Trophy className="h-3.5 w-3.5 text-amber-500" />}
+                <span className="text-xs text-muted-foreground">vs</span>
+              </div>
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
                   <span className="font-medium text-sm">
@@ -179,7 +184,10 @@ export function MatchlogItem({ game, filteredPlayerId, filteredKillteamId }: Mat
               <span className={`text-3xl font-bold tabular-nums ${getResultColor(leftTotal, rightTotal)}`}>
                 {leftTotal}
               </span>
-              <span className="text-muted-foreground text-sm">vs</span>
+              <div className="flex flex-col items-center gap-0.5">
+                {game.competitive_play && <Trophy className="h-4 w-4 text-amber-500" />}
+                <span className="text-muted-foreground text-sm">vs</span>
+              </div>
               <span className={`text-3xl font-bold tabular-nums ${getResultColor(rightTotal, leftTotal)}`}>
                 {rightTotal}
               </span>
@@ -233,6 +241,22 @@ export function MatchlogItem({ game, filteredPlayerId, filteredKillteamId }: Mat
                   <span className="text-muted-foreground">Critical Operation:</span>
                   <span className="font-medium">{game.critop?.name || "Unknown"}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Competitive Play:</span>
+                  <span className="font-medium">
+                    {game.competitive_play ? (
+                      <span className="inline-flex items-center gap-1 text-amber-500">
+                        <Trophy className="h-3.5 w-3.5" /> Yes
+                      </span>
+                    ) : "No"}
+                  </span>
+                </div>
+                {game.notes && (
+                  <div className="pt-2 border-t border-border">
+                    <span className="text-muted-foreground">Notes:</span>
+                    <p className="mt-1 text-foreground whitespace-pre-wrap">{game.notes}</p>
+                  </div>
+                )}
               </div>
             </div>
 

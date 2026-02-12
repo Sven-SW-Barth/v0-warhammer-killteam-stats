@@ -95,7 +95,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
     direction: "desc",
   })
   const [matchupSort, setMatchupSort] = useState<{ key: string; direction: "asc" | "desc" }>({
-    key: "games",
+    key: "winRate",
     direction: "desc",
   })
 
@@ -516,7 +516,10 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-[95vw] !w-[95vw] max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 md:p-6"
+        style={{ maxWidth: "min(95vw, calc(100vw - 2rem))", width: "100%" }}
+      >
         <DialogHeader>
           <DialogTitle className="text-xl">{factionName}</DialogTitle>
           <DialogDescription className="text-sm">
@@ -529,7 +532,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
             <div className="text-muted-foreground">Loading faction statistics...</div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0 overflow-hidden">
             {/* Filters */}
             <Card className="p-4">
               <div className="grid gap-3 md:grid-cols-2">
@@ -570,31 +573,25 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
             </Card>
 
             {/* Overview Stats */}
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4">
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm text-muted-foreground">Total Games</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{overviewStats.totalGames}</div>
+                <CardContent className="flex items-center justify-between p-3 md:block md:p-6">
+                  <span className="text-sm text-muted-foreground md:text-xs">Games</span>
+                  <span className="text-xl font-bold md:mt-1 md:block md:text-2xl">{overviewStats.totalGames}</span>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm text-muted-foreground">Win Rate</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{overviewStats.winRate.toFixed(1)}%</div>
+                <CardContent className="flex items-center justify-between p-3 md:block md:p-6">
+                  <span className="text-sm text-muted-foreground md:text-xs">Win Rate</span>
+                  <span className="text-xl font-bold md:mt-1 md:block md:text-2xl">{overviewStats.winRate.toFixed(1)}%</span>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm text-muted-foreground">Avg Score</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{overviewStats.avgScore.toFixed(1)}</div>
+                <CardContent className="flex items-center justify-between p-3 md:block md:p-6">
+                  <span className="text-sm text-muted-foreground md:text-xs">Avg Score</span>
+                  <span className="text-xl font-bold md:mt-1 md:block md:text-2xl">{overviewStats.avgScore.toFixed(1)}</span>
                 </CardContent>
               </Card>
             </div>
@@ -617,13 +614,14 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                       .sort((a, b) => a.winRate - b.winRate)
                       .slice(0, 3)
                       .map((stat, index) => (
-                        <div key={stat.name} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                        <div key={stat.name} className="p-2 rounded-lg bg-muted/50">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-muted-foreground w-4">#{index + 1}</span>
-                            <span className="text-sm font-medium">{stat.name}</span>
+                            <span className="text-xs font-semibold text-muted-foreground shrink-0">#{index + 1}</span>
+                            <span className="text-sm font-medium truncate">{stat.name}</span>
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2 mt-1 ml-5">
                             <span className="text-xs text-muted-foreground">{stat.games} games</span>
+                            <span className="text-xs text-muted-foreground">-</span>
                             <span
                               className={`text-sm font-bold ${stat.winRate < 50 ? "text-red-500" : "text-muted-foreground"}`}
                             >
@@ -657,13 +655,14 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                       .sort((a, b) => b.winRate - a.winRate)
                       .slice(0, 3)
                       .map((stat, index) => (
-                        <div key={stat.name} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                        <div key={stat.name} className="p-2 rounded-lg bg-muted/50">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-muted-foreground w-4">#{index + 1}</span>
-                            <span className="text-sm font-medium">{stat.name}</span>
+                            <span className="text-xs font-semibold text-muted-foreground shrink-0">#{index + 1}</span>
+                            <span className="text-sm font-medium truncate">{stat.name}</span>
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2 mt-1 ml-5">
                             <span className="text-xs text-muted-foreground">{stat.games} games</span>
+                            <span className="text-xs text-muted-foreground">-</span>
                             <span
                               className={`text-sm font-bold ${stat.winRate >= 50 ? "text-green-500" : "text-muted-foreground"}`}
                             >
@@ -687,33 +686,33 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                 <CardTitle className="text-base">Critical Operations</CardTitle>
                 <CardDescription className="text-xs">CritOp performance and average scores</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead
-                        className="h-8 text-xs cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                         onClick={() => toggleSort(critOpSort, setCritOpSort, "name")}
                       >
                         CritOp
                         <SortIcon column="name" sortKey={critOpSort.key} direction={critOpSort.direction} />
                       </TableHead>
                       <TableHead
-                        className="h-8 text-xs text-right cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs text-right cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                         onClick={() => toggleSort(critOpSort, setCritOpSort, "count")}
                       >
-                        Games
+                        #
                         <SortIcon column="count" sortKey={critOpSort.key} direction={critOpSort.direction} />
                       </TableHead>
                       <TableHead
-                        className="h-8 text-xs text-right cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs text-right cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                         onClick={() => toggleSort(critOpSort, setCritOpSort, "usage")}
                       >
-                        Usage %
+                        Use%
                         <SortIcon column="usage" sortKey={critOpSort.key} direction={critOpSort.direction} />
                       </TableHead>
                       <TableHead
-                        className="h-8 text-xs text-right cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs text-right cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                         onClick={() => toggleSort(critOpSort, setCritOpSort, "avgScore")}
                       >
                         Avg
@@ -724,12 +723,12 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                   <TableBody>
                     {sortCritOps(critOpStats).map((stat) => (
                       <TableRow key={stat.name} className="h-8">
-                        <TableCell className="py-1 text-sm font-medium">{stat.name}</TableCell>
-                        <TableCell className="py-1 text-sm text-right">{stat.count}</TableCell>
-                        <TableCell className="py-1 text-sm text-right">
+                        <TableCell className="py-1 text-xs md:text-sm font-medium px-2 md:px-4">{stat.name}</TableCell>
+                        <TableCell className="py-1 text-xs md:text-sm text-right px-2 md:px-4">{stat.count}</TableCell>
+                        <TableCell className="py-1 text-xs md:text-sm text-right px-2 md:px-4">
                           {overviewStats ? ((stat.count / overviewStats.totalGames) * 100).toFixed(1) : 0}%
                         </TableCell>
-                        <TableCell className="py-1 text-sm text-right">{stat.avgScore.toFixed(1)}</TableCell>
+                        <TableCell className="py-1 text-xs md:text-sm text-right px-2 md:px-4">{stat.avgScore.toFixed(1)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -742,43 +741,43 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                 <CardTitle className="text-base">Tactical Operations</CardTitle>
                 <CardDescription className="text-xs">TacOp usage, average scores, and win rates</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead
-                        className="h-8 text-xs cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                         onClick={() => toggleSort(tacOpSort, setTacOpSort, "name")}
                       >
                         TacOp
                         <SortIcon column="name" sortKey={tacOpSort.key} direction={tacOpSort.direction} />
                       </TableHead>
                       <TableHead
-                        className="h-8 text-xs text-right cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs text-right cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                         onClick={() => toggleSort(tacOpSort, setTacOpSort, "count")}
                       >
-                        Games
+                        #
                         <SortIcon column="count" sortKey={tacOpSort.key} direction={tacOpSort.direction} />
                       </TableHead>
                       <TableHead
-                        className="h-8 text-xs text-right cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs text-right cursor-pointer hover:bg-muted/50 px-2 md:px-4 hidden md:table-cell"
                         onClick={() => toggleSort(tacOpSort, setTacOpSort, "usage")}
                       >
-                        Usage %
+                        Use%
                         <SortIcon column="usage" sortKey={tacOpSort.key} direction={tacOpSort.direction} />
                       </TableHead>
                       <TableHead
-                        className="h-8 text-xs text-right cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs text-right cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                         onClick={() => toggleSort(tacOpSort, setTacOpSort, "avgScore")}
                       >
                         Avg
                         <SortIcon column="avgScore" sortKey={tacOpSort.key} direction={tacOpSort.direction} />
                       </TableHead>
                       <TableHead
-                        className="h-8 text-xs text-right cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs text-right cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                         onClick={() => toggleSort(tacOpSort, setTacOpSort, "winRate")}
                       >
-                        Win %
+                        Win%
                         <SortIcon column="winRate" sortKey={tacOpSort.key} direction={tacOpSort.direction} />
                       </TableHead>
                     </TableRow>
@@ -786,13 +785,13 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                   <TableBody>
                     {sortTacOps(tacOpStats).map((stat) => (
                       <TableRow key={stat.name} className="h-8">
-                        <TableCell className="py-1 text-sm font-medium">{stat.name}</TableCell>
-                        <TableCell className="py-1 text-sm text-right">{stat.count}</TableCell>
-                        <TableCell className="py-1 text-sm text-right">
+                        <TableCell className="py-1 text-xs md:text-sm font-medium px-2 md:px-4">{stat.name}</TableCell>
+                        <TableCell className="py-1 text-xs md:text-sm text-right px-2 md:px-4">{stat.count}</TableCell>
+                        <TableCell className="py-1 text-xs md:text-sm text-right px-2 md:px-4 hidden md:table-cell">
                           {overviewStats ? ((stat.count / overviewStats.totalGames) * 100).toFixed(1) : 0}%
                         </TableCell>
-                        <TableCell className="py-1 text-sm text-right">{stat.avgScore.toFixed(1)}</TableCell>
-                        <TableCell className="py-1 text-sm text-right font-semibold">
+                        <TableCell className="py-1 text-xs md:text-sm text-right px-2 md:px-4">{stat.avgScore.toFixed(1)}</TableCell>
+                        <TableCell className="py-1 text-xs md:text-sm text-right font-semibold px-2 md:px-4">
                           {stat.winRate.toFixed(1)}%
                         </TableCell>
                       </TableRow>
@@ -808,26 +807,26 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                   <CardTitle className="text-base">Primary Operations</CardTitle>
                   <CardDescription className="text-xs">Primary Op usage and average scores</CardDescription>
                 </CardHeader>
-                <CardContent className="pt-0">
+                <CardContent className="pt-0 overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead
-                          className="h-8 text-xs cursor-pointer hover:bg-muted/50"
+                          className="h-8 text-[11px] md:text-xs cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                           onClick={() => toggleSort(primaryOpSort, setPrimaryOpSort, "name")}
                         >
                           Primary Op
                           <SortIcon column="name" sortKey={primaryOpSort.key} direction={primaryOpSort.direction} />
                         </TableHead>
                         <TableHead
-                          className="h-8 text-xs text-right cursor-pointer hover:bg-muted/50"
+                          className="h-8 text-[11px] md:text-xs text-right cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                           onClick={() => toggleSort(primaryOpSort, setPrimaryOpSort, "count")}
                         >
-                          Games
+                          #
                           <SortIcon column="count" sortKey={primaryOpSort.key} direction={primaryOpSort.direction} />
                         </TableHead>
                         <TableHead
-                          className="h-8 text-xs text-right cursor-pointer hover:bg-muted/50"
+                          className="h-8 text-[11px] md:text-xs text-right cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                           onClick={() => toggleSort(primaryOpSort, setPrimaryOpSort, "avgScore")}
                         >
                           Avg
@@ -838,9 +837,9 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                     <TableBody>
                       {sortPrimaryOps(primaryOpStats).map((stat) => (
                         <TableRow key={stat.name} className="h-8">
-                          <TableCell className="py-1 text-sm font-medium">{stat.name}</TableCell>
-                          <TableCell className="py-1 text-sm text-right">{stat.count}</TableCell>
-                          <TableCell className="py-1 text-sm text-right">{stat.avgScore.toFixed(1)}</TableCell>
+                          <TableCell className="py-1 text-xs md:text-sm font-medium px-2 md:px-4">{stat.name}</TableCell>
+                          <TableCell className="py-1 text-xs md:text-sm text-right px-2 md:px-4">{stat.count}</TableCell>
+                          <TableCell className="py-1 text-xs md:text-sm text-right px-2 md:px-4">{stat.avgScore.toFixed(1)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -854,34 +853,34 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                 <CardTitle className="text-base">Kill Zones</CardTitle>
                 <CardDescription className="text-xs">Performance by Kill Zone map</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead
-                        className="h-8 text-xs cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                         onClick={() => toggleSort(killzoneSort, setKillzoneSort, "name")}
                       >
-                        Kill Zone
+                        Map
                         <SortIcon column="name" sortKey={killzoneSort.key} direction={killzoneSort.direction} />
                       </TableHead>
                       <TableHead
-                        className="h-8 text-xs text-right cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs text-right cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                         onClick={() => toggleSort(killzoneSort, setKillzoneSort, "games")}
                       >
-                        Games
+                        #
                         <SortIcon column="games" sortKey={killzoneSort.key} direction={killzoneSort.direction} />
                       </TableHead>
-                      <TableHead className="h-8 text-xs text-right">W-L-D</TableHead>
+                      <TableHead className="h-8 text-[11px] md:text-xs text-right px-2 md:px-4 hidden md:table-cell">W-L-D</TableHead>
                       <TableHead
-                        className="h-8 text-xs text-right cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs text-right cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                         onClick={() => toggleSort(killzoneSort, setKillzoneSort, "winRate")}
                       >
-                        Win %
+                        Win%
                         <SortIcon column="winRate" sortKey={killzoneSort.key} direction={killzoneSort.direction} />
                       </TableHead>
                       <TableHead
-                        className="h-8 text-xs text-right cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs text-right cursor-pointer hover:bg-muted/50 px-2 md:px-4 hidden md:table-cell"
                         onClick={() => toggleSort(killzoneSort, setKillzoneSort, "avgScore")}
                       >
                         Avg
@@ -892,17 +891,17 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                   <TableBody>
                     {sortKillzones(killzoneStats).map((stat) => (
                       <TableRow key={stat.name} className="h-8">
-                        <TableCell className="py-1 text-sm font-medium">{stat.name}</TableCell>
-                        <TableCell className="py-1 text-sm text-right">{stat.games}</TableCell>
-                        <TableCell className="py-1 text-sm text-right">
+                        <TableCell className="py-1 text-xs md:text-sm font-medium px-2 md:px-4">{stat.name}</TableCell>
+                        <TableCell className="py-1 text-xs md:text-sm text-right px-2 md:px-4">{stat.games}</TableCell>
+                        <TableCell className="py-1 text-xs md:text-sm text-right px-2 md:px-4 hidden md:table-cell">
                           <span className="text-green-500">{stat.wins}</span>-
                           <span className="text-red-500">{stat.losses}</span>-
                           <span className="text-muted-foreground">{stat.draws}</span>
                         </TableCell>
-                        <TableCell className="py-1 text-sm text-right font-semibold">
+                        <TableCell className="py-1 text-xs md:text-sm text-right font-semibold px-2 md:px-4">
                           {stat.winRate.toFixed(1)}%
                         </TableCell>
-                        <TableCell className="py-1 text-sm text-right">{stat.avgScore.toFixed(1)}</TableCell>
+                        <TableCell className="py-1 text-xs md:text-sm text-right px-2 md:px-4 hidden md:table-cell">{stat.avgScore.toFixed(1)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -915,30 +914,30 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                 <CardTitle className="text-base">Matchup Statistics</CardTitle>
                 <CardDescription className="text-xs">Performance against other factions</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead
-                        className="h-8 text-xs cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                         onClick={() => toggleSort(matchupSort, setMatchupSort, "name")}
                       >
                         Opponent
                         <SortIcon column="name" sortKey={matchupSort.key} direction={matchupSort.direction} />
                       </TableHead>
                       <TableHead
-                        className="h-8 text-xs text-right cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs text-right cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                         onClick={() => toggleSort(matchupSort, setMatchupSort, "games")}
                       >
-                        Games
+                        #
                         <SortIcon column="games" sortKey={matchupSort.key} direction={matchupSort.direction} />
                       </TableHead>
-                      <TableHead className="h-8 text-xs text-right">W-L-D</TableHead>
+                      <TableHead className="h-8 text-[11px] md:text-xs text-right px-2 md:px-4">W-L-D</TableHead>
                       <TableHead
-                        className="h-8 text-xs text-right cursor-pointer hover:bg-muted/50"
+                        className="h-8 text-[11px] md:text-xs text-right cursor-pointer hover:bg-muted/50 px-2 md:px-4"
                         onClick={() => toggleSort(matchupSort, setMatchupSort, "winRate")}
                       >
-                        Win %
+                        Win%
                         <SortIcon column="winRate" sortKey={matchupSort.key} direction={matchupSort.direction} />
                       </TableHead>
                     </TableRow>
@@ -946,14 +945,14 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                   <TableBody>
                     {sortMatchups(opponentStats).map((stat) => (
                       <TableRow key={stat.name} className="h-8">
-                        <TableCell className="py-1 text-sm font-medium">{stat.name}</TableCell>
-                        <TableCell className="py-1 text-sm text-right">{stat.games}</TableCell>
-                        <TableCell className="py-1 text-sm text-right">
+                        <TableCell className="py-1 text-xs md:text-sm font-medium px-2 md:px-4">{stat.name}</TableCell>
+                        <TableCell className="py-1 text-xs md:text-sm text-right px-2 md:px-4">{stat.games}</TableCell>
+                        <TableCell className="py-1 text-xs md:text-sm text-right px-2 md:px-4">
                           <span className="text-green-500">{stat.wins}</span>-
                           <span className="text-red-500">{stat.losses}</span>-
                           <span className="text-muted-foreground">{stat.draws}</span>
                         </TableCell>
-                        <TableCell className="py-1 text-sm text-right font-semibold">
+                        <TableCell className="py-1 text-xs md:text-sm text-right font-semibold px-2 md:px-4">
                           {stat.winRate.toFixed(1)}%
                         </TableCell>
                       </TableRow>

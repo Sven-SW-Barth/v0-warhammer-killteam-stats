@@ -173,7 +173,7 @@ export function StatsFilters({ killzones = [], countries = [], rulesUpdates = []
           <Label className="text-sm font-medium mb-2 block">Timeframe</Label>
           <div className="grid gap-4 md:grid-cols-2">
             {/* Start Date */}
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-xs text-muted-foreground">Start</Label>
               <Select 
                 value={startRulesUpdateId} 
@@ -231,7 +231,7 @@ export function StatsFilters({ killzones = [], countries = [], rulesUpdates = []
             </div>
 
             {/* End Date */}
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label className="text-xs text-muted-foreground">End</Label>
               <Select 
                 value={endRulesUpdateId} 
