@@ -242,7 +242,7 @@ export function MatchlogItem({ game, filteredPlayerId, filteredKillteamId }: Mat
                   <span className="font-medium">{game.critop?.name || "Unknown"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Competitive Play:</span>
+                  <span className="text-muted-foreground">Tournament Match:</span>
                   <span className="font-medium">
                     {game.competitive_play ? (
                       <span className="inline-flex items-center gap-1 text-amber-500">
