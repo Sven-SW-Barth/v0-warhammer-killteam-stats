@@ -638,7 +638,10 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-[95vw] !w-[95vw] max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 md:p-6"
+        style={{ maxWidth: "min(95vw, calc(100vw - 2rem))", width: "100%" }}
+      >
         <DialogHeader>
           <DialogTitle className="text-2xl">{playerName}</DialogTitle>
         </DialogHeader>
@@ -648,7 +651,7 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
             <div className="text-muted-foreground">Loading player statistics...</div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0 overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {eloProgression.length > 0 && (
                 <Card className="lg:col-span-2">
