@@ -516,7 +516,10 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="dialog-wide max-h-[90vh] overflow-y-auto p-4 md:p-6">
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 md:p-6"
+        style={{ maxWidth: "min(95vw, calc(100vw - 2rem))", width: "100%" }}
+      >
         <DialogHeader>
           <DialogTitle className="text-xl">{factionName}</DialogTitle>
           <DialogDescription className="text-sm">
@@ -529,7 +532,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
             <div className="text-muted-foreground">Loading faction statistics...</div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0 overflow-hidden">
             {/* Filters */}
             <Card className="p-4">
               <div className="grid gap-3 md:grid-cols-2">
@@ -687,7 +690,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                 <CardTitle className="text-base">Critical Operations</CardTitle>
                 <CardDescription className="text-xs">CritOp performance and average scores</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+              <CardContent className="pt-0 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -742,7 +745,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                 <CardTitle className="text-base">Tactical Operations</CardTitle>
                 <CardDescription className="text-xs">TacOp usage, average scores, and win rates</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+              <CardContent className="pt-0 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -808,7 +811,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                   <CardTitle className="text-base">Primary Operations</CardTitle>
                   <CardDescription className="text-xs">Primary Op usage and average scores</CardDescription>
                 </CardHeader>
-                <CardContent className="pt-0 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+                <CardContent className="pt-0 overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -854,7 +857,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                 <CardTitle className="text-base">Kill Zones</CardTitle>
                 <CardDescription className="text-xs">Performance by Kill Zone map</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+              <CardContent className="pt-0 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -915,7 +918,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                 <CardTitle className="text-base">Matchup Statistics</CardTitle>
                 <CardDescription className="text-xs">Performance against other factions</CardDescription>
               </CardHeader>
-              <CardContent className="pt-0 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+              <CardContent className="pt-0 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>

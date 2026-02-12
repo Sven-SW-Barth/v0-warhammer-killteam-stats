@@ -126,15 +126,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-/* Wide dialog that respects mobile viewport */
-.dialog-wide {
-  width: 100%;
-  max-width: calc(100% - 2rem);
-}
-
-@media (min-width: 768px) {
-  .dialog-wide {
-    max-width: 95vw;
-  }
-}
