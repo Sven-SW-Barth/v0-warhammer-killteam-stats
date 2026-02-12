@@ -133,7 +133,8 @@ export function GameEntryForm({ players, countries, killteams, killzones, tacops
     setError(null)
     setSuccess(false)
 
-    const formData = new FormData(e.currentTarget)
+    const form = e.currentTarget
+    const formData = new FormData(form)
 
     const finalMapLayout = mapLayout === "custom" ? customMapLayout : mapLayout
     formData.set("map_layout", finalMapLayout)
@@ -164,7 +165,7 @@ export function GameEntryForm({ players, countries, killteams, killzones, tacops
 
         setSuccess(true)
         setShowSuccessScreen(true)
-        e.currentTarget.reset()
+        form.reset()
 
         setMapLayout("")
         setCustomMapLayout("")
