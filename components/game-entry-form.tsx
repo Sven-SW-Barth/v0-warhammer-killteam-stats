@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button"
 import { submitGame } from "@/app/actions"
 import { useRouter } from "next/navigation"
 import { PlayerSearchCombobox } from "@/components/player-search-combobox"
-import { CheckCircle2, Info } from "lucide-react"
+import { CheckCircle2, Info, Trophy } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 type ReferenceData = {
@@ -55,6 +57,8 @@ export function GameEntryForm({ players, countries, killteams, killzones, tacops
   const [player2Id, setPlayer2Id] = useState<string>("")
 
   const [isAnonymousOpponent, setIsAnonymousOpponent] = useState(false)
+  const [isCompetitivePlay, setIsCompetitivePlay] = useState(false)
+  const [notes, setNotes] = useState("")
 
   const [formFields, setFormFields] = useState({
     country: false,
@@ -141,6 +145,11 @@ export function GameEntryForm({ players, countries, killteams, killzones, tacops
       formData.set("is_anonymous_opponent", "true")
     }
 
+    formData.set("competitive_play", isCompetitivePlay ? "true" : "false")
+    if (notes.trim()) {
+      formData.set("notes", notes.trim())
+    }
+
     if (useCustomDate && customDate) {
       const dateValue = customDate.includes("T") ? customDate : `${customDate}T00:00`
       formData.set("custom_date", dateValue)
@@ -170,6 +179,8 @@ export function GameEntryForm({ players, countries, killteams, killzones, tacops
         setPlayer2ScoreErrors({ tacop: false, critop: false, killop: false })
         setPlayer2PrimaryOp("")
         setIsAnonymousOpponent(false)
+        setIsCompetitivePlay(false)
+        setNotes("")
         setSelectedCountry("")
         setFormFields({
           country: false,
@@ -930,6 +941,41 @@ export function GameEntryForm({ players, countries, killteams, killzones, tacops
                     {player2Total}
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Competitive Play & Notes */}
+            <div className="space-y-4 rounded-lg border border-border p-4">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="competitive_play"
+                  checked={isCompetitivePlay}
+                  onCheckedChange={(checked) => setIsCompetitivePlay(checked === true)}
+                />
+                <Label htmlFor="competitive_play" className="flex items-center gap-2 text-sm font-normal cursor-pointer">
+                  <Trophy className="h-4 w-4 text-amber-500" />
+                  Competitive Play
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>Check this field when the game was held in a competitive tournament setting.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes" className="text-sm">Notes <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Add any notes about this game..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="resize-none"
+                  rows={2}
+                />
               </div>
             </div>
 

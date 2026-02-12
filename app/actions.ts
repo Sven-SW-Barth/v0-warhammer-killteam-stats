@@ -34,6 +34,8 @@ export async function submitGame(formData: FormData) {
     const player2KillopScore = Number.parseInt(formData.get("player2_killop_score") as string)
 
     const isAnonymousOpponent = formData.get("is_anonymous_opponent") === "true"
+    const competitivePlay = formData.get("competitive_play") === "true"
+    const gameNotes = formData.get("notes") as string | null
 
     // Validate inputs
     if (!player1Value || (!player2Value && !isAnonymousOpponent) || !player1PrimaryOp || !player2PrimaryOp) {
@@ -223,6 +225,8 @@ export async function submitGame(formData: FormData) {
       player2_elo_before: hasAnonymousPlayer ? null : player2EloBefore,
       player2_elo_after: hasAnonymousPlayer ? null : player2EloAfter,
       elo_processed: true,
+      competitive_play: competitivePlay,
+      notes: gameNotes || null,
       ...(customDate && { created_at: new Date(customDate).toISOString() }),
     })
 
