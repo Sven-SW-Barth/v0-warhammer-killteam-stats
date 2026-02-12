@@ -254,7 +254,7 @@ export function MatchlogItem({ game, filteredPlayerId, filteredKillteamId }: Mat
                 {game.notes && (
                   <div className="pt-2 border-t border-border">
                     <span className="text-muted-foreground">Notes:</span>
-                    <p className="mt-1 font-medium text-foreground whitespace-pre-wrap">{game.notes}</p>
+                    <p className="mt-1 text-foreground whitespace-pre-wrap">{game.notes}</p>
                   </div>
                 )}
               </div>
