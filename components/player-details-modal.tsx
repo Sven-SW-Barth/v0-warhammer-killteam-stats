@@ -100,9 +100,11 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
   const [eloProgression, setEloProgression] = useState<EloDataPoint[]>([])
   const [frequentOpponents, setFrequentOpponents] = useState<FrequentOpponent[]>([])
   const [playerData, setPlayerData] = useState<any | null>(null)
+  const [showAllKillteams, setShowAllKillteams] = useState(false)
 
   useEffect(() => {
     if (open && playerId) {
+      setShowAllKillteams(false)
       fetchPlayerDetails()
     }
   }, [open, playerId])
@@ -683,7 +685,7 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-2">
-                      {killteamStats.slice(0, 5).map((stat) => (
+                      {(showAllKillteams ? killteamStats : killteamStats.slice(0, 5)).map((stat) => (
                         <div key={stat.name} className="flex justify-between items-center text-sm">
                           <span className="font-medium truncate flex-1">{stat.name}</span>
                           <div className="flex items-center gap-2 text-xs">
@@ -693,9 +695,13 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
                         </div>
                       ))}
                       {killteamStats.length > 5 && (
-                        <div className="text-xs text-muted-foreground pt-1">
-                          +{killteamStats.length - 5} more factions
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowAllKillteams(!showAllKillteams)}
+                          className="text-xs text-muted-foreground pt-1 hover:text-foreground transition-colors cursor-pointer"
+                        >
+                          {showAllKillteams ? "Show less" : `+${killteamStats.length - 5} more factions`}
+                        </button>
                       )}
                     </div>
                   </CardContent>
