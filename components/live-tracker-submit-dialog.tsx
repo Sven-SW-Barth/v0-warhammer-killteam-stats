@@ -36,6 +36,8 @@ type GameData = {
   }
   tacops: Array<{ id: number; name: string; archetype: string }>
   primaryOps: Array<{ id: number; name: string }>
+  isCompetitivePlay: boolean
+  notes: string
 }
 
 type Props = {
@@ -96,6 +98,9 @@ export function LiveTrackerSubmitDialog({ open, onOpenChange, gameData }: Props)
       formData.append("player2_tacop_score", gameData.player2.tacOpScore.toString())
       formData.append("player2_critop_score", gameData.player2.critOpScore.toString())
       formData.append("player2_killop_score", gameData.player2.killOpScore.toString())
+
+      formData.append("competitive_play", gameData.isCompetitivePlay ? "on" : "")
+      formData.append("notes", gameData.notes)
 
       const result = await submitGame(formData)
 
@@ -263,6 +268,23 @@ export function LiveTrackerSubmitDialog({ open, onOpenChange, gameData }: Props)
               </div>
             </div>
           </div>
+
+          {/* Tournament Match & Notes */}
+          {(gameData.isCompetitivePlay || gameData.notes) && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              {gameData.isCompetitivePlay && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-amber-500">Tournament Match</span>
+                </div>
+              )}
+              {gameData.notes && (
+                <div className="mt-2 text-sm">
+                  <span className="text-muted-foreground">Notes:</span>
+                  <p className="mt-1 text-foreground">{gameData.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
         </div>

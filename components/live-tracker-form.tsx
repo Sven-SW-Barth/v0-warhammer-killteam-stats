@@ -2,7 +2,11 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Skull, Zap } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Skull, Zap, Trophy, Info } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import ChessClock from "@/components/chess-clock" // Import ChessClock component
@@ -86,6 +90,8 @@ export function LiveTrackerForm({ data, gameSetup }: Props) {
 
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
   const [showSuccessScreen, setShowSuccessScreen] = useState(false)
+  const [isCompetitivePlay, setIsCompetitivePlay] = useState(false)
+  const [notes, setNotes] = useState("")
 
   const canSubmitGame = player1TacOp !== "" && player2TacOp !== "" && player1PrimaryOp !== "" && player2PrimaryOp !== ""
 
@@ -579,6 +585,42 @@ export function LiveTrackerForm({ data, gameSetup }: Props) {
         </div>
       </div>
 
+      {/* Tournament Match & Notes */}
+      <div className="rounded-lg border border-border bg-card p-3 space-y-3">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="competitive_play_tracker"
+            checked={isCompetitivePlay}
+            onCheckedChange={(checked) => setIsCompetitivePlay(checked === true)}
+          />
+          <Label htmlFor="competitive_play_tracker" className="flex items-center gap-2 text-sm font-normal cursor-pointer">
+            <Trophy className="h-4 w-4 text-amber-500" />
+            Tournament Match
+          </Label>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>Check this field when the game was held in a competitive tournament setting.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        
+        <div className="space-y-1">
+          <Label htmlFor="notes_tracker" className="text-sm">Notes <span className="text-muted-foreground text-xs">(optional)</span></Label>
+          <Textarea
+            id="notes_tracker"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Add any notes about the game..."
+            className="h-16 resize-none text-sm"
+          />
+        </div>
+      </div>
+
       {/* Submit Game Button */}
       <div className="mt-4 flex justify-center">
         <Button
@@ -616,6 +658,8 @@ export function LiveTrackerForm({ data, gameSetup }: Props) {
             },
             tacops: data.tacops,
             primaryOps: data.primaryOps,
+            isCompetitivePlay,
+            notes,
           }}
           onSuccess={() => setShowSuccessScreen(true)}
         />
