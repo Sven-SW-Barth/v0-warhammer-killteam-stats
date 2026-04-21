@@ -164,8 +164,8 @@ export function StatsFactionTable({ factionStats, showLessThan3Games, showDeclas
                 <td className="text-right">{stat.totalGames}</td>
                 <td className="text-right text-green-500">{stat.wins}</td>
                 <td className="text-right text-red-500">{stat.losses}</td>
-                <td className="text-right text-muted-foreground">{stat.draws}</td>
-                <td className="text-right text-amber-500">{stat.mirror}</td>
+                <td className="text-right text-amber-500">{stat.draws}</td>
+                <td className="text-right text-muted-foreground">{stat.mirror}</td>
                 <td className="text-right font-semibold">{stat.winRate.toFixed(1)}%</td>
                 <td className="text-right font-semibold">{stat.avgScore.toFixed(1)}</td>
               </tr>

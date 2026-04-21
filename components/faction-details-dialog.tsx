@@ -605,9 +605,9 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                     <span className="text-muted-foreground mx-1">/</span>
                     <span className="text-red-500">{overviewStats.losses}</span>
                     <span className="text-muted-foreground mx-1">/</span>
-                    <span className="text-muted-foreground">{overviewStats.draws}</span>
+                    <span className="text-amber-500">{overviewStats.draws}</span>
                     <span className="text-muted-foreground mx-1">/</span>
-                    <span className="text-amber-500">{overviewStats.mirror}</span>
+                    <span className="text-muted-foreground">{overviewStats.mirror}</span>
                   </div>
                 </CardContent>
               </Card>
