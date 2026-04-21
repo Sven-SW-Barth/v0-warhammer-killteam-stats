@@ -96,7 +96,7 @@ export default async function StatsPage({
   })
 
   const killteamStatsMap: {
-    [key: number]: { wins: number; losses: number; draws: number; totalVP: number; games: number }
+    [key: number]: { wins: number; losses: number; draws: number; mirror: number; totalVP: number; games: number }
   } = {}
 
   const killzoneCount: { [key: number]: number } = {}
@@ -119,13 +119,17 @@ export default async function StatsPage({
       (game.player2_critop_score || 0) +
       (game.player2_killop_score || 0)
 
-    if (!killteamStatsMap[p1KtId]) killteamStatsMap[p1KtId] = { wins: 0, losses: 0, draws: 0, totalVP: 0, games: 0 }
-    if (!killteamStatsMap[p2KtId]) killteamStatsMap[p2KtId] = { wins: 0, losses: 0, draws: 0, totalVP: 0, games: 0 }
+    if (!killteamStatsMap[p1KtId]) killteamStatsMap[p1KtId] = { wins: 0, losses: 0, draws: 0, mirror: 0, totalVP: 0, games: 0 }
+    if (!killteamStatsMap[p2KtId]) killteamStatsMap[p2KtId] = { wins: 0, losses: 0, draws: 0, mirror: 0, totalVP: 0, games: 0 }
 
     const p1Won = p1VP > p2VP
     const p2Won = p2VP > p1VP
+    const isMirrorMatch = p1KtId === p2KtId
 
-    if (p1Won) {
+    if (isMirrorMatch) {
+      // Mirror match - count once for the faction (both players are the same faction)
+      killteamStatsMap[p1KtId].mirror += 2 // Count as 2 because both players use the same faction
+    } else if (p1Won) {
       killteamStatsMap[p1KtId].wins++
       killteamStatsMap[p2KtId].losses++
     } else if (p2Won) {
@@ -187,8 +191,10 @@ export default async function StatsPage({
 
   const factionStats = (killteams || [])
     .map((kt: any) => {
-      const stats = killteamStatsMap[kt.id] || { wins: 0, losses: 0, draws: 0, totalVP: 0, games: 0 }
-      const winRate = stats.games > 0 ? (stats.wins / stats.games) * 100 : 0
+      const stats = killteamStatsMap[kt.id] || { wins: 0, losses: 0, draws: 0, mirror: 0, totalVP: 0, games: 0 }
+      // Win rate is calculated excluding mirror matches (wins / (wins + losses + draws))
+      const nonMirrorGames = stats.wins + stats.losses + stats.draws
+      const winRate = nonMirrorGames > 0 ? (stats.wins / nonMirrorGames) * 100 : 0
       const avgScore = stats.games > 0 ? stats.totalVP / stats.games : 0
 
       return {
@@ -199,6 +205,7 @@ export default async function StatsPage({
         wins: stats.wins,
         losses: stats.losses,
         draws: stats.draws,
+        mirror: stats.mirror,
         totalGames: stats.games,
         winRate,
         avgScore,
