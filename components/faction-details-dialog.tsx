@@ -146,11 +146,14 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
     const killzones = new Set<string>()
 
     games.forEach((game) => {
-      const isFactionPlayer1 = game.player1_killteam_id === factionIdNum
-      const opponentName = isFactionPlayer1
-        ? (game.player2_killteam as { name: string }).name
-        : (game.player1_killteam as { name: string }).name
-      opponents.add(opponentName)
+      // Skip mirror matches for opponent list
+      if (game.player1_killteam_id !== game.player2_killteam_id) {
+        const isFactionPlayer1 = game.player1_killteam_id === factionIdNum
+        const opponentName = isFactionPlayer1
+          ? (game.player2_killteam as { name: string }).name
+          : (game.player1_killteam as { name: string }).name
+        opponents.add(opponentName)
+      }
 
       const killzoneName = (game.killzone as { name: string }).name
       killzones.add(killzoneName)
@@ -381,6 +384,11 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
 
     const opponentMap = new Map<string, { games: number; wins: number; losses: number; draws: number }>()
     filteredGames.forEach((game) => {
+      // Skip mirror matches (same faction vs same faction)
+      if (game.player1_killteam_id === game.player2_killteam_id) {
+        return
+      }
+
       const isFactionPlayer1 = game.player1_killteam_id === factionIdNum
       const opponentName = isFactionPlayer1
         ? (game.player2_killteam as { name: string }).name
