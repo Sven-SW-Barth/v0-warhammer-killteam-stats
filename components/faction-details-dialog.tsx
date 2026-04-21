@@ -60,6 +60,7 @@ interface OverviewStats {
   wins: number
   losses: number
   draws: number
+  mirror: number
   winRate: number
   avgScore: number
 }
@@ -146,7 +147,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
     const killzones = new Set<string>()
 
     games.forEach((game) => {
-      // Skip mirror matches for opponent list
+      // Only add non-mirror match opponents to the filter list
       if (game.player1_killteam_id !== game.player2_killteam_id) {
         const isFactionPlayer1 = game.player1_killteam_id === factionIdNum
         const opponentName = isFactionPlayer1
@@ -192,10 +193,12 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
     let totalWins = 0
     let totalLosses = 0
     let totalDraws = 0
+    let totalMirror = 0
     let totalScore = 0
 
     filteredGames.forEach((game) => {
       const isFactionPlayer1 = game.player1_killteam_id === factionIdNum
+      const isMirrorMatch = game.player1_killteam_id === game.player2_killteam_id
 
       const factionScore = isFactionPlayer1
         ? game.player1_tacop_score +
@@ -219,7 +222,9 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
 
       totalScore += factionScore
 
-      if (factionScore > opponentScore) {
+      if (isMirrorMatch) {
+        totalMirror++
+      } else if (factionScore > opponentScore) {
         totalWins++
       } else if (factionScore < opponentScore) {
         totalLosses++
@@ -228,12 +233,15 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
       }
     })
 
+    // Win rate excludes mirror matches
+    const nonMirrorGames = totalWins + totalLosses + totalDraws
     setOverviewStats({
       totalGames: filteredGames.length,
       wins: totalWins,
       losses: totalLosses,
       draws: totalDraws,
-      winRate: filteredGames.length > 0 ? (totalWins / filteredGames.length) * 100 : 0,
+      mirror: totalMirror,
+      winRate: nonMirrorGames > 0 ? (totalWins / nonMirrorGames) * 100 : 0,
       avgScore: filteredGames.length > 0 ? totalScore / filteredGames.length : 0,
     })
 
@@ -581,11 +589,26 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
             </Card>
 
             {/* Overview Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
               <Card>
                 <CardContent className="flex items-center justify-between p-3 md:block md:p-6">
                   <span className="text-sm text-muted-foreground md:text-xs">Games</span>
                   <span className="text-xl font-bold md:mt-1 md:block md:text-2xl">{overviewStats.totalGames}</span>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="flex items-center justify-between p-3 md:block md:p-6">
+                  <span className="text-sm text-muted-foreground md:text-xs">W / L / D / M</span>
+                  <div className="text-lg font-bold md:mt-1 md:block md:text-xl">
+                    <span className="text-green-500">{overviewStats.wins}</span>
+                    <span className="text-muted-foreground mx-1">/</span>
+                    <span className="text-red-500">{overviewStats.losses}</span>
+                    <span className="text-muted-foreground mx-1">/</span>
+                    <span className="text-muted-foreground">{overviewStats.draws}</span>
+                    <span className="text-muted-foreground mx-1">/</span>
+                    <span className="text-amber-500">{overviewStats.mirror}</span>
+                  </div>
                 </CardContent>
               </Card>
 

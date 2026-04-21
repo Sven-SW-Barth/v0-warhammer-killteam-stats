@@ -12,6 +12,7 @@ interface FactionStat {
   wins: number
   losses: number
   draws: number
+  mirror: number
   totalGames: number
   winRate: number
   avgScore: number
@@ -25,12 +26,12 @@ interface StatsFactionTableProps {
 
 export function StatsFactionTable({ factionStats, showLessThan3Games, showDeclassified }: StatsFactionTableProps) {
   const [selectedFaction, setSelectedFaction] = useState<{ id: string; name: string } | null>(null)
-  const [sortKey, setSortKey] = useState<"name" | "totalGames" | "wins" | "losses" | "draws" | "winRate" | "avgScore">(
+  const [sortKey, setSortKey] = useState<"name" | "totalGames" | "wins" | "losses" | "draws" | "mirror" | "winRate" | "avgScore">(
     "totalGames",
   )
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
 
-  const handleSort = (key: "name" | "totalGames" | "wins" | "losses" | "draws" | "winRate" | "avgScore") => {
+  const handleSort = (key: "name" | "totalGames" | "wins" | "losses" | "draws" | "mirror" | "winRate" | "avgScore") => {
     if (sortKey === key) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc")
     } else {
@@ -61,7 +62,7 @@ export function StatsFactionTable({ factionStats, showLessThan3Games, showDeclas
 
   const SortIcon = ({
     column,
-  }: { column: "name" | "totalGames" | "wins" | "losses" | "draws" | "winRate" | "avgScore" }) => {
+  }: { column: "name" | "totalGames" | "wins" | "losses" | "draws" | "mirror" | "winRate" | "avgScore" }) => {
     if (sortKey !== column) {
       return <ArrowUpDown className="h-4 w-4 opacity-50" />
     }
@@ -121,6 +122,15 @@ export function StatsFactionTable({ factionStats, showLessThan3Games, showDeclas
               </th>
               <th className="text-right py-2">
                 <button
+                  onClick={() => handleSort("mirror")}
+                  className="flex items-center gap-1 hover:text-primary transition-colors ml-auto"
+                >
+                  Mirror
+                  <SortIcon column="mirror" />
+                </button>
+              </th>
+              <th className="text-right py-2">
+                <button
                   onClick={() => handleSort("winRate")}
                   className="flex items-center gap-1 hover:text-primary transition-colors ml-auto"
                 >
@@ -155,6 +165,7 @@ export function StatsFactionTable({ factionStats, showLessThan3Games, showDeclas
                 <td className="text-right text-green-500">{stat.wins}</td>
                 <td className="text-right text-red-500">{stat.losses}</td>
                 <td className="text-right text-muted-foreground">{stat.draws}</td>
+                <td className="text-right text-amber-500">{stat.mirror}</td>
                 <td className="text-right font-semibold">{stat.winRate.toFixed(1)}%</td>
                 <td className="text-right font-semibold">{stat.avgScore.toFixed(1)}</td>
               </tr>
