@@ -591,43 +591,44 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
             {/* Overview Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
               <Card>
-                <CardContent className="flex items-center justify-between p-3 md:block md:p-6">
-                  <span className="text-sm text-muted-foreground md:text-xs">Games</span>
-                  <span className="text-xl font-bold md:mt-1 md:block md:text-2xl">{overviewStats.totalGames}</span>
+                <CardContent className="p-3 md:p-6">
+                  <span className="text-xs text-muted-foreground block">Games</span>
+                  <span className="text-xl font-bold mt-1 block md:text-2xl">{overviewStats.totalGames}</span>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="flex items-center justify-between p-3 md:block md:p-6">
-                  <span className="text-sm text-muted-foreground md:text-xs">W / L / D / M</span>
-                  <div className="text-lg font-bold md:mt-1 md:block md:text-xl">
+                <CardContent className="p-3 md:p-6">
+                  <span className="text-xs text-muted-foreground block">W/L/D/M</span>
+                  <div className="text-lg font-bold mt-1 md:text-xl">
                     <span className="text-green-500">{overviewStats.wins}</span>
-                    <span className="text-muted-foreground mx-1">/</span>
+                    <span className="text-muted-foreground">/</span>
                     <span className="text-red-500">{overviewStats.losses}</span>
-                    <span className="text-muted-foreground mx-1">/</span>
+                    <span className="text-muted-foreground">/</span>
                     <span className="text-amber-500">{overviewStats.draws}</span>
-                    <span className="text-muted-foreground mx-1">/</span>
+                    <span className="text-muted-foreground">/</span>
                     <span className="text-muted-foreground">{overviewStats.mirror}</span>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="flex items-center justify-between p-3 md:block md:p-6">
-                  <span className="text-sm text-muted-foreground md:text-xs">Win Rate</span>
-                  <span className="text-xl font-bold md:mt-1 md:block md:text-2xl">{overviewStats.winRate.toFixed(1)}%</span>
+                <CardContent className="p-3 md:p-6">
+                  <span className="text-xs text-muted-foreground block">Win Rate</span>
+                  <span className="text-xl font-bold mt-1 block md:text-2xl">{overviewStats.winRate.toFixed(1)}%</span>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="flex items-center justify-between p-3 md:block md:p-6">
-                  <span className="text-sm text-muted-foreground md:text-xs">Avg Score</span>
-                  <span className="text-xl font-bold md:mt-1 md:block md:text-2xl">{overviewStats.avgScore.toFixed(1)}</span>
+                <CardContent className="p-3 md:p-6">
+                  <span className="text-xs text-muted-foreground block">Avg Score</span>
+                  <span className="text-xl font-bold mt-1 block md:text-2xl">{overviewStats.avgScore.toFixed(1)}</span>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Counterpicks and GG EZ matchup tiles */}
+            {/* Counterpicks and GG EZ matchup tiles - only show when viewing all opponents */}
+            {selectedOpponent === "all" && (
             <div className="grid gap-4 md:grid-cols-2">
               {/* Counterpicks - Worst Matchups */}
               <Card>
@@ -711,6 +712,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                 </CardContent>
               </Card>
             </div>
+            )}
 
             <Card>
               <CardHeader className="pb-3">
