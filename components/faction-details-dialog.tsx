@@ -627,7 +627,8 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
               </Card>
             </div>
 
-            {/* Counterpicks and GG EZ matchup tiles */}
+            {/* Counterpicks and GG EZ matchup tiles - only show when viewing all opponents */}
+            {selectedOpponent === "all" && (
             <div className="grid gap-4 md:grid-cols-2">
               {/* Counterpicks - Worst Matchups */}
               <Card>
@@ -711,6 +712,7 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
                 </CardContent>
               </Card>
             </div>
+            )}
 
             <Card>
               <CardHeader className="pb-3">
