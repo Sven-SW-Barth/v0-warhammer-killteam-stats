@@ -599,14 +599,14 @@ export function FactionDetailsDialog({ factionId, factionName, open, onOpenChang
 
               <Card>
                 <CardContent className="flex items-center justify-between p-3 md:block md:p-6">
-                  <span className="text-sm text-muted-foreground md:text-xs">W / L / D / M</span>
-                  <div className="text-lg font-bold md:mt-1 md:block md:text-xl">
+                  <span className="text-sm text-muted-foreground md:text-xs shrink-0">W/L/D/M</span>
+                  <div className="text-base font-bold md:mt-1 md:block md:text-xl whitespace-nowrap">
                     <span className="text-green-500">{overviewStats.wins}</span>
-                    <span className="text-muted-foreground mx-1">/</span>
+                    <span className="text-muted-foreground">/</span>
                     <span className="text-red-500">{overviewStats.losses}</span>
-                    <span className="text-muted-foreground mx-1">/</span>
+                    <span className="text-muted-foreground">/</span>
                     <span className="text-amber-500">{overviewStats.draws}</span>
-                    <span className="text-muted-foreground mx-1">/</span>
+                    <span className="text-muted-foreground">/</span>
                     <span className="text-muted-foreground">{overviewStats.mirror}</span>
                   </div>
                 </CardContent>
