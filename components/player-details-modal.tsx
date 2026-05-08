@@ -95,7 +95,9 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
   const [killteamStats, setKillteamStats] = useState<KillteamStats[]>([])
   const [killzoneStats, setKillzoneStats] = useState<KillzoneStats[]>([])
   const [enemyKillteamStats, setEnemyKillteamStats] = useState<EnemyKillteamStats[]>([])
+  const [allEnemyKillteamStats, setAllEnemyKillteamStats] = useState<EnemyKillteamStats[]>([])
   const [selectedKillteam, setSelectedKillteam] = useState<string>("all")
+  const [selectedOpponentKillteam, setSelectedOpponentKillteam] = useState<string>("all")
   const [allGames, setAllGames] = useState<any[]>([])
   const [eloProgression, setEloProgression] = useState<EloDataPoint[]>([])
   const [frequentOpponents, setFrequentOpponents] = useState<FrequentOpponent[]>([])
@@ -105,30 +107,43 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
   useEffect(() => {
     if (open && playerId) {
       setShowAllKillteams(false)
+      setSelectedKillteam("all")
+      setSelectedOpponentKillteam("all")
       fetchPlayerDetails()
     }
   }, [open, playerId])
 
   useEffect(() => {
     if (playerData?.games) {
-      const stats = calculateFilteredStats(playerData.games, selectedKillteam)
+      const stats = calculateFilteredStats(playerData.games, selectedKillteam, selectedOpponentKillteam)
       setTacOpStats(stats.tacOpStats)
       setCritOpStats(stats.critOpStats)
       setPrimaryOpStats(stats.primaryOpStats)
       setKillzoneStats(stats.killzoneStats)
       setEnemyKillteamStats(stats.enemyKillteamStats)
     }
-  }, [playerData, selectedKillteam])
+  }, [playerData, selectedKillteam, selectedOpponentKillteam])
 
-  function calculateFilteredStats(games: any[], killteamFilter: string) {
-    const filteredGames =
-      killteamFilter === "all"
-        ? games
-        : games.filter((game) => {
-            const isPlayer1 = game.player1_id.toString() === playerId
-            const killteam = isPlayer1 ? game.player1_killteam : game.player2_killteam
-            return killteam?.name === killteamFilter
-          })
+  function calculateFilteredStats(games: any[], killteamFilter: string, opponentKillteamFilter: string) {
+    let filteredGames = games
+
+    // Filter by player's killteam
+    if (killteamFilter !== "all") {
+      filteredGames = filteredGames.filter((game) => {
+        const isPlayer1 = game.player1_id.toString() === playerId
+        const killteam = isPlayer1 ? game.player1_killteam : game.player2_killteam
+        return killteam?.name === killteamFilter
+      })
+    }
+
+    // Filter by opponent's killteam
+    if (opponentKillteamFilter !== "all") {
+      filteredGames = filteredGames.filter((game) => {
+        const isPlayer1 = game.player1_id.toString() === playerId
+        const opponentKillteam = isPlayer1 ? game.player2_killteam : game.player1_killteam
+        return opponentKillteam?.name === opponentKillteamFilter
+      })
+    }
 
     const tacOpMap = new Map<
       string,
@@ -621,8 +636,9 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
       }))
       enemyKillteams.sort((a, b) => b.games - a.games)
 
-      setEnemyKillteamStats(enemyKillteams)
-
+setEnemyKillteamStats(enemyKillteams)
+      setAllEnemyKillteamStats(enemyKillteams)
+  
       setPlayerData({ games, players })
       console.log("[v0] Processed stats successfully")
     } catch (error) {
@@ -733,21 +749,39 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
             <div className="space-y-4">
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <h3 className="text-lg font-semibold">Operations Statistics</h3>
-                <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-2">
-                  <span className="text-sm text-muted-foreground">Filter by Kill Team:</span>
-                  <Select value={selectedKillteam} onValueChange={setSelectedKillteam}>
-                    <SelectTrigger className="w-full md:w-[200px]">
-                      <SelectValue placeholder="Select killteam" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Kill Teams</SelectItem>
-                      {killteamStats.map((kt) => (
-                        <SelectItem key={kt.name} value={kt.name}>
-                          {kt.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
+                  <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-2">
+                    <span className="text-sm text-muted-foreground">Kill Team:</span>
+                    <Select value={selectedKillteam} onValueChange={setSelectedKillteam}>
+                      <SelectTrigger className="w-full md:w-[180px]">
+                        <SelectValue placeholder="Select killteam" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Kill Teams</SelectItem>
+                        {killteamStats.map((kt) => (
+                          <SelectItem key={kt.name} value={kt.name}>
+                            {kt.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-2">
+                    <span className="text-sm text-muted-foreground">Opponent:</span>
+                    <Select value={selectedOpponentKillteam} onValueChange={setSelectedOpponentKillteam}>
+                      <SelectTrigger className="w-full md:w-[180px]">
+                        <SelectValue placeholder="Select opponent" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Opponents</SelectItem>
+                        {allEnemyKillteamStats.map((kt) => (
+                          <SelectItem key={kt.name} value={kt.name}>
+                            {kt.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
