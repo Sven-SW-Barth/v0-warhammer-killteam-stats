@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
 import { AddLocationDialog } from "@/components/add-location-dialog"
 
@@ -34,6 +35,7 @@ interface Location {
   website: string | null
   email: string | null
   phone: string | null
+  discord_link: string | null
   country?: {
     name: string
     code: string
@@ -47,8 +49,17 @@ const typeLabels: Record<string, string> = {
   other: "Other",
 }
 
+const typeColors: Record<string, string> = {
+  store: "bg-green-500/20 text-green-500",
+  club: "bg-blue-500/20 text-blue-500",
+  cafe: "bg-amber-500/20 text-amber-500",
+  other: "bg-purple-500/20 text-purple-500",
+}
+
 export default function FindAGamePage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [typeFilter, setTypeFilter] = useState<string>("all")
+  const [countryFilter, setCountryFilter] = useState<string>("all")
   const [locations, setLocations] = useState<Location[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
@@ -75,13 +86,27 @@ export default function FindAGamePage() {
     fetchLocations()
   }, [])
 
-  const filteredLocations = locations.filter(
-    (location) =>
+  // Get unique countries for the filter
+  const countries = Array.from(
+    new Map(
+      locations
+        .filter((loc) => loc.country)
+        .map((loc) => [loc.country!.code, loc.country!])
+    ).values()
+  ).sort((a, b) => a.name.localeCompare(b.name))
+
+  const filteredLocations = locations.filter((location) => {
+    const matchesSearch =
       location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       location.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
       location.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
       typeLabels[location.type]?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+
+    const matchesType = typeFilter === "all" || location.type === typeFilter
+    const matchesCountry = countryFilter === "all" || location.country?.code === countryFilter
+
+    return matchesSearch && matchesType && matchesCountry
+  })
 
   return (
     <div className="min-h-screen bg-background">
@@ -107,6 +132,34 @@ export default function FindAGamePage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
+          </div>
+          {/* Filters */}
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="store">Gaming Store</SelectItem>
+                <SelectItem value="club">Gaming Club</SelectItem>
+                <SelectItem value="cafe">Gaming Cafe</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={countryFilter} onValueChange={setCountryFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="All Countries" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Countries</SelectItem>
+                {countries.map((country) => (
+                  <SelectItem key={country.code} value={country.code}>
+                    {country.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -165,7 +218,7 @@ export default function FindAGamePage() {
                         <div className="flex-1">
                           <div className="mb-2 flex flex-wrap items-center gap-2">
                             <h3 className="font-semibold text-foreground">{location.name}</h3>
-                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${typeColors[location.type]}`}>
                               {typeLabels[location.type]}
                             </span>
                           </div>
@@ -198,14 +251,24 @@ export default function FindAGamePage() {
                             )}
                           </div>
                         </div>
-                        {location.website && (
-                          <Button variant="outline" size="sm" asChild className="shrink-0">
-                            <a href={location.website} target="_blank" rel="noopener noreferrer" className="gap-2">
-                              Visit Website
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          </Button>
-                        )}
+                        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                          {location.discord_link && (
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={location.discord_link} target="_blank" rel="noopener noreferrer" className="gap-2">
+                                Join Discord
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </Button>
+                          )}
+                          {location.website && (
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={location.website} target="_blank" rel="noopener noreferrer" className="gap-2">
+                                Visit Website
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
