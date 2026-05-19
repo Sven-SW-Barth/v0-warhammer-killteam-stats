@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { Suspense } from "react"
+import { Analytics } from "@vercel/analytics/next"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { BackToTopButton } from "@/components/back-to-top-button"
@@ -39,6 +40,7 @@ export default function RootLayout({
         </main>
         <Footer />
         <BackToTopButton />
+        <Analytics />
       </body>
     </html>
   )
