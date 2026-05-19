@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+import { AddLocationDialog } from "@/components/add-location-dialog"
 
 // Dynamically import the map component to avoid SSR issues with Leaflet
 const LocationsMap = dynamic(() => import("@/components/locations-map").then((mod) => mod.LocationsMap), {
@@ -127,6 +128,19 @@ export default function FindAGamePage() {
           {/* Table View */}
           <TabsContent value="table">
             <div className="space-y-4">
+              {/* Add Location CTA */}
+              <div className="rounded-lg bg-orange-500 p-6 text-center">
+                <p className="text-base text-blue-900">
+                  If you run a gaming store or club that hosts Kill Team games, or want to add your favorite gaming place,{" "}
+                  <AddLocationDialog>
+                    <button className="font-bold underline hover:text-blue-800">
+                      get in touch with us
+                    </button>
+                  </AddLocationDialog>{" "}
+                  to be listed here.
+                </p>
+              </div>
+
               {isLoading ? (
                 <Card>
                   <CardContent className="py-12 text-center">
@@ -230,14 +244,6 @@ export default function FindAGamePage() {
             )}
           </TabsContent>
         </Tabs>
-
-        {/* Info Section */}
-        <div className="mt-12 rounded-lg border border-border bg-card p-6 text-center">
-          <h3 className="mb-2 text-lg font-semibold text-foreground">Want to add your store or club?</h3>
-          <p className="text-sm text-muted-foreground">
-            If you run a gaming store or club that hosts Kill Team games, get in touch with us to be listed here.
-          </p>
-        </div>
       </div>
     </div>
   )
