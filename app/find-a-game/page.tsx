@@ -129,15 +129,15 @@ export default function FindAGamePage() {
           <TabsContent value="table">
             <div className="space-y-4">
               {/* Add Location CTA */}
-              <div className="rounded-lg bg-orange-500 p-6 text-center">
-                <p className="text-base text-blue-900">
-                  If you run a gaming store or club that hosts Kill Team games, or want to add your favorite gaming place,{" "}
+              <div className="rounded-lg border border-border bg-card/50 px-4 py-3 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Know a place that hosts Kill Team games?{" "}
                   <AddLocationDialog>
-                    <button className="font-bold underline hover:text-blue-800">
-                      get in touch with us
+                    <button className="font-medium text-primary underline underline-offset-2 hover:text-primary/80">
+                      Submit a location
                     </button>
                   </AddLocationDialog>{" "}
-                  to be listed here.
+                  to help grow this list.
                 </p>
               </div>
 
