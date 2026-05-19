@@ -1,59 +1,73 @@
 "use client"
 
-import { useState } from "react"
-import { Search, MapPin, List, ExternalLink } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Search, MapPin, List, ExternalLink, Mail, Phone } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { createClient } from "@/lib/supabase/client"
 
-// Placeholder data for gaming stores/clubs
-const placeholderLocations = [
-  {
-    id: 1,
-    name: "Warhammer Store Hamburg",
-    address: "Spitalerstraße 12, 20095 Hamburg",
-    type: "Official Store",
-    website: "https://www.warhammer.com",
-  },
-  {
-    id: 2,
-    name: "Fantastic Store Berlin",
-    address: "Alexanderplatz 1, 10178 Berlin",
-    type: "Gaming Store",
-    website: "https://example.com",
-  },
-  {
-    id: 3,
-    name: "Tabletop Club Munich",
-    address: "Marienplatz 8, 80331 Munich",
-    type: "Gaming Club",
-    website: "https://example.com",
-  },
-  {
-    id: 4,
-    name: "The Gaming Den",
-    address: "Königsallee 45, 40212 Düsseldorf",
-    type: "Gaming Store",
-    website: "https://example.com",
-  },
-  {
-    id: 5,
-    name: "Warhammer Store Frankfurt",
-    address: "Zeil 106, 60313 Frankfurt",
-    type: "Official Store",
-    website: "https://www.warhammer.com",
-  },
-]
+interface Location {
+  id: number
+  name: string
+  address: string
+  city: string
+  postal_code: string | null
+  country_id: number | null
+  latitude: number | null
+  longitude: number | null
+  type: "store" | "club" | "cafe" | "other"
+  description: string | null
+  website: string | null
+  email: string | null
+  phone: string | null
+  country?: {
+    name: string
+    code: string
+  }
+}
+
+const typeLabels: Record<string, string> = {
+  store: "Gaming Store",
+  club: "Gaming Club",
+  cafe: "Gaming Cafe",
+  other: "Other",
+}
 
 export default function FindAGamePage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [locations, setLocations] = useState<Location[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const filteredLocations = placeholderLocations.filter(
+  useEffect(() => {
+    async function fetchLocations() {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("locations")
+        .select(`
+          *,
+          country:countries(name, code)
+        `)
+        .order("name")
+
+      if (error) {
+        console.error("Error fetching locations:", error)
+      } else {
+        setLocations(data || [])
+      }
+      setIsLoading(false)
+    }
+
+    fetchLocations()
+  }, [])
+
+  const filteredLocations = locations.filter(
     (location) =>
       location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       location.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      location.type.toLowerCase().includes(searchQuery.toLowerCase())
+      location.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      typeLabels[location.type]?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   return (
@@ -75,7 +89,7 @@ export default function FindAGamePage() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search by name, location, or type..."
+              placeholder="Search by name, city, or type..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -101,34 +115,72 @@ export default function FindAGamePage() {
           {/* Table View */}
           <TabsContent value="table">
             <div className="space-y-4">
-              {filteredLocations.length === 0 ? (
+              {isLoading ? (
                 <Card>
                   <CardContent className="py-12 text-center">
-                    <p className="text-muted-foreground">No locations found matching your search.</p>
+                    <p className="text-muted-foreground">Loading locations...</p>
+                  </CardContent>
+                </Card>
+              ) : filteredLocations.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <p className="text-muted-foreground">
+                      {locations.length === 0
+                        ? "No locations have been added yet. Check back soon!"
+                        : "No locations found matching your search."}
+                    </p>
                   </CardContent>
                 </Card>
               ) : (
                 filteredLocations.map((location) => (
                   <Card key={location.id}>
-                    <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-                      <div className="flex-1">
-                        <div className="mb-1 flex items-center gap-2">
-                          <h3 className="font-semibold text-foreground">{location.name}</h3>
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                            {location.type}
-                          </span>
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex-1">
+                          <div className="mb-2 flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold text-foreground">{location.name}</h3>
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                              {typeLabels[location.type]}
+                            </span>
+                          </div>
+                          <p className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            {location.address}, {location.postal_code && `${location.postal_code} `}{location.city}
+                            {location.country && `, ${location.country.name}`}
+                          </p>
+                          {location.description && (
+                            <p className="mb-3 text-sm text-muted-foreground">{location.description}</p>
+                          )}
+                          <div className="flex flex-wrap gap-3 text-sm">
+                            {location.email && (
+                              <a
+                                href={`mailto:${location.email}`}
+                                className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                              >
+                                <Mail className="h-3 w-3" />
+                                {location.email}
+                              </a>
+                            )}
+                            {location.phone && (
+                              <a
+                                href={`tel:${location.phone}`}
+                                className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                              >
+                                <Phone className="h-3 w-3" />
+                                {location.phone}
+                              </a>
+                            )}
+                          </div>
                         </div>
-                        <p className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          {location.address}
-                        </p>
+                        {location.website && (
+                          <Button variant="outline" size="sm" asChild className="shrink-0">
+                            <a href={location.website} target="_blank" rel="noopener noreferrer" className="gap-2">
+                              Visit Website
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </Button>
+                        )}
                       </div>
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={location.website} target="_blank" rel="noopener noreferrer" className="gap-2">
-                          Visit Website
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </Button>
                     </CardContent>
                   </Card>
                 ))
