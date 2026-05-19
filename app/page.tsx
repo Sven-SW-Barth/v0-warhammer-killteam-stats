@@ -73,20 +73,6 @@ export default async function LandingPage() {
           <KofiButton />
         </div>
 
-        {/* Find a Game Section */}
-        <div className="mb-12 flex flex-col items-center justify-center rounded-lg border border-border bg-card p-6 text-center sm:mb-16 sm:p-8">
-          <h2 className="mb-3 text-xl font-semibold text-foreground sm:text-2xl">Play in Person</h2>
-          <p className="mb-6 max-w-xl text-pretty text-base text-muted-foreground sm:text-lg">
-            TTS is great, but nothing beats rolling dice on a real table. Find a local gaming store or club near you to have a game in person.
-          </p>
-          <Link
-            href="/find-a-game"
-            className="rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Find a Place to Play
-          </Link>
-        </div>
-
         {/* YouTube Recommendation Section */}
         <div className="mb-12 flex flex-col items-center justify-center rounded-lg border border-border bg-card p-6 text-center sm:mb-16 sm:p-8">
           <p className="mb-6 text-pretty text-base text-muted-foreground sm:text-lg">
@@ -128,6 +114,20 @@ export default async function LandingPage() {
               competition.
             </p>
           </div>
+        </div>
+
+        {/* Find a Game Section */}
+        <div className="mt-12 flex flex-col items-center justify-center rounded-lg border border-border bg-card p-6 text-center sm:mt-16 sm:p-8">
+          <h2 className="mb-3 text-xl font-semibold text-foreground sm:text-2xl">Play in Person</h2>
+          <p className="mb-6 max-w-xl text-pretty text-base text-muted-foreground sm:text-lg">
+            TTS is great, but nothing beats rolling dice on a real table. Find a local gaming store or club near you to have a game in person.
+          </p>
+          <Link
+            href="/find-a-game"
+            className="rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Find a Place to Play
+          </Link>
         </div>
       </div>
     </div>
