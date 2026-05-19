@@ -1,12 +1,23 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import dynamic from "next/dynamic"
 import { Search, MapPin, List, ExternalLink, Mail, Phone } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+
+// Dynamically import the map component to avoid SSR issues with Leaflet
+const LocationsMap = dynamic(() => import("@/components/locations-map").then((mod) => mod.LocationsMap), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[500px] w-full items-center justify-center rounded-lg border border-border bg-card">
+      <p className="text-muted-foreground">Loading map...</p>
+    </div>
+  ),
+})
 
 interface Location {
   id: number
@@ -39,6 +50,7 @@ export default function FindAGamePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [locations, setLocations] = useState<Location[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
 
   useEffect(() => {
     async function fetchLocations() {
@@ -190,17 +202,32 @@ export default function FindAGamePage() {
 
           {/* Map View */}
           <TabsContent value="map">
-            <Card>
-              <CardContent className="flex min-h-[400px] items-center justify-center p-6 sm:min-h-[500px]">
-                <div className="text-center">
-                  <MapPin className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
-                  <h3 className="mb-2 text-lg font-semibold text-foreground">Map View Coming Soon</h3>
-                  <p className="text-sm text-muted-foreground">
-                    We&apos;re working on an interactive map to help you find gaming locations near you.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            {isLoading ? (
+              <Card>
+                <CardContent className="flex min-h-[500px] items-center justify-center p-6">
+                  <p className="text-muted-foreground">Loading locations...</p>
+                </CardContent>
+              </Card>
+            ) : filteredLocations.length === 0 ? (
+              <Card>
+                <CardContent className="flex min-h-[500px] items-center justify-center p-6">
+                  <div className="text-center">
+                    <MapPin className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
+                    <p className="text-muted-foreground">
+                      {locations.length === 0
+                        ? "No locations have been added yet."
+                        : "No locations found matching your search."}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <LocationsMap
+                locations={filteredLocations}
+                selectedLocation={selectedLocation}
+                onLocationSelect={setSelectedLocation}
+              />
+            )}
           </TabsContent>
         </Tabs>
 
