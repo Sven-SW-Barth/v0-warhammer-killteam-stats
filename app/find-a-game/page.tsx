@@ -34,6 +34,7 @@ interface Location {
   website: string | null
   email: string | null
   phone: string | null
+  discord_link: string | null
   country?: {
     name: string
     code: string
@@ -45,6 +46,13 @@ const typeLabels: Record<string, string> = {
   club: "Gaming Club",
   cafe: "Gaming Cafe",
   other: "Other",
+}
+
+const typeColors: Record<string, string> = {
+  store: "bg-green-500/20 text-green-500",
+  club: "bg-blue-500/20 text-blue-500",
+  cafe: "bg-amber-500/20 text-amber-500",
+  other: "bg-purple-500/20 text-purple-500",
 }
 
 export default function FindAGamePage() {
@@ -165,7 +173,7 @@ export default function FindAGamePage() {
                         <div className="flex-1">
                           <div className="mb-2 flex flex-wrap items-center gap-2">
                             <h3 className="font-semibold text-foreground">{location.name}</h3>
-                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${typeColors[location.type]}`}>
                               {typeLabels[location.type]}
                             </span>
                           </div>
@@ -198,14 +206,24 @@ export default function FindAGamePage() {
                             )}
                           </div>
                         </div>
-                        {location.website && (
-                          <Button variant="outline" size="sm" asChild className="shrink-0">
-                            <a href={location.website} target="_blank" rel="noopener noreferrer" className="gap-2">
-                              Visit Website
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          </Button>
-                        )}
+                        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                          {location.discord_link && (
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={location.discord_link} target="_blank" rel="noopener noreferrer" className="gap-2">
+                                Join Community
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </Button>
+                          )}
+                          {location.website && (
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={location.website} target="_blank" rel="noopener noreferrer" className="gap-2">
+                                Visit Website
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
