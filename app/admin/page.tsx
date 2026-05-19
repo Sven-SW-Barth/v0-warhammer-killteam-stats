@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Shield, Lock, RefreshCw, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react"
+import { Shield, Lock, RefreshCw, AlertCircle, CheckCircle2, AlertTriangle, MapPin, Trash2 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -25,6 +25,7 @@ export default function AdminPage() {
   } | null>(null)
   const [deletionReports, setDeletionReports] = useState<any[]>([])
   const [bugReports, setBugReports] = useState<any[]>([])
+  const [locationRequests, setLocationRequests] = useState<any[]>([])
   const [isLoadingReports, setIsLoadingReports] = useState(false)
   const [eloNeedsRecalc, setEloNeedsRecalc] = useState(false)
   const [serviceAlertEnabled, setServiceAlertEnabled] = useState(false)
@@ -135,8 +136,18 @@ export default function AdminPage() {
         console.error("[v0] Error loading bug reports:", bugError)
       }
 
+      const { data: locations, error: locationError } = await supabase
+        .from("location_requests")
+        .select("*")
+        .order("created_at", { ascending: false })
+
+      if (locationError) {
+        console.error("[v0] Error loading location requests:", locationError)
+      }
+
       setDeletionReports(deletions || [])
       setBugReports(bugs || [])
+      setLocationRequests(locations || [])
     } catch (error) {
       console.error("[v0] Error loading reports:", error)
     } finally {
@@ -214,6 +225,25 @@ export default function AdminPage() {
       })
     } finally {
       setIsRecalculating(false)
+    }
+  }
+
+  const handleDeleteLocationRequest = async (id: number) => {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from("location_requests")
+        .delete()
+        .eq("id", id)
+
+      if (error) {
+        console.error("[v0] Error deleting location request:", error)
+        return
+      }
+
+      setLocationRequests((prev) => prev.filter((req) => req.id !== id))
+    } catch (error) {
+      console.error("[v0] Error deleting location request:", error)
     }
   }
 
@@ -421,6 +451,62 @@ export default function AdminPage() {
               )}
             </Button>
           </div>
+        </Card>
+
+        {/* Location Requests Section */}
+        <Card className="p-6">
+          <div className="mb-4">
+            <h2 className="flex items-center gap-2 text-xl font-semibold">
+              <MapPin className="h-5 w-5" />
+              Location Requests
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Review and manage location submissions from users
+            </p>
+          </div>
+
+          {locationRequests.length === 0 ? (
+            <p className="py-4 text-center text-muted-foreground">No location requests pending.</p>
+          ) : (
+            <div className="space-y-3">
+              {locationRequests.map((request) => (
+                <div
+                  key={request.id}
+                  className="flex items-start justify-between gap-4 rounded-lg border border-border bg-card p-4"
+                >
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <h3 className="font-semibold text-foreground">{request.location_name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {request.street} {request.street_number}, {request.city}
+                    </p>
+                    {(request.contact_name || request.contact_email || request.discord_handle) && (
+                      <p className="text-xs text-muted-foreground">
+                        Contact: {[request.contact_name, request.contact_email, request.discord_handle].filter(Boolean).join(" | ")}
+                      </p>
+                    )}
+                    {request.contact_phone && (
+                      <p className="text-xs text-muted-foreground">Phone: {request.contact_phone}</p>
+                    )}
+                    {request.message && (
+                      <p className="mt-2 text-sm text-muted-foreground">&quot;{request.message}&quot;</p>
+                    )}
+                    <p className="text-xs text-muted-foreground/70">
+                      Submitted: {new Date(request.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => handleDeleteLocationRequest(request.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Delete request</span>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
       </div>
     </div>
