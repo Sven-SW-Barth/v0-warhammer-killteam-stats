@@ -148,6 +148,7 @@ export default function AdminPage() {
       setDeletionReports(deletions || [])
       setBugReports(bugs || [])
       setLocationRequests(locations || [])
+      console.log("[v0] Location requests loaded:", locations)
     } catch (error) {
       console.error("[v0] Error loading reports:", error)
     } finally {
