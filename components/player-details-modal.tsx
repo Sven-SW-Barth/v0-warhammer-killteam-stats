@@ -109,6 +109,13 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
   const [selectedOpponentIds, setSelectedOpponentIds] = useState<string[]>([])
   const [playerData, setPlayerData] = useState<any | null>(null)
   const [showAllKillteams, setShowAllKillteams] = useState(false)
+  const [filteredSummary, setFilteredSummary] = useState<{
+    games: number
+    wins: number
+    losses: number
+    draws: number
+    winRate: number
+  }>({ games: 0, wins: 0, losses: 0, draws: 0, winRate: 0 })
 
   useEffect(() => {
     if (open && playerId) {
@@ -132,6 +139,7 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
       setPrimaryOpStats(stats.primaryOpStats)
       setKillzoneStats(stats.killzoneStats)
       setEnemyKillteamStats(stats.enemyKillteamStats)
+      setFilteredSummary(stats.summary)
     }
   }, [playerData, selectedKillteam, selectedOpponentKillteam, selectedOpponentIds])
 
@@ -455,12 +463,54 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
     }))
     enemyKillteams.sort((a, b) => b.games - a.games)
 
+    let summaryWins = 0
+    let summaryLosses = 0
+    let summaryDraws = 0
+    filteredGames.forEach((game) => {
+      const isPlayer1 = game.player1_id.toString() === playerId
+      const playerScore = isPlayer1
+        ? game.player1_tacop_score +
+          game.player1_critop_score +
+          game.player1_killop_score +
+          (game.player1_primary_op_score || 0)
+        : game.player2_tacop_score +
+          game.player2_critop_score +
+          game.player2_killop_score +
+          (game.player2_primary_op_score || 0)
+      const opponentScore = isPlayer1
+        ? game.player2_tacop_score +
+          game.player2_critop_score +
+          game.player2_killop_score +
+          (game.player2_primary_op_score || 0)
+        : game.player1_tacop_score +
+          game.player1_critop_score +
+          game.player1_killop_score +
+          (game.player1_primary_op_score || 0)
+
+      if (playerScore > opponentScore) {
+        summaryWins++
+      } else if (playerScore < opponentScore) {
+        summaryLosses++
+      } else {
+        summaryDraws++
+      }
+    })
+
+    const summaryGames = filteredGames.length
+
     return {
       tacOpStats: tacOps,
       critOpStats: critOps,
       primaryOpStats: primaryOps,
       killzoneStats: killzones,
       enemyKillteamStats: enemyKillteams,
+      summary: {
+        games: summaryGames,
+        wins: summaryWins,
+        losses: summaryLosses,
+        draws: summaryDraws,
+        winRate: summaryGames > 0 ? (summaryWins / summaryGames) * 100 : 0,
+      },
     }
   }
 
@@ -873,6 +923,29 @@ setEnemyKillteamStats(enemyKillteams)
                       </PopoverContent>
                     </Popover>
                   </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border bg-muted/40 px-4 py-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Games total:</span>
+                  <span className="font-semibold">{filteredSummary.games}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Win Rate:</span>
+                  <span className={`font-semibold ${getWinRateColor(filteredSummary.winRate)}`}>
+                    {filteredSummary.winRate.toFixed(0)}%
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">W/D/L:</span>
+                  <span className="font-semibold">
+                    <span className="text-green-600">{filteredSummary.wins}W</span>
+                    {" / "}
+                    <span className="text-gray-500">{filteredSummary.draws}D</span>
+                    {" / "}
+                    <span className="text-red-600">{filteredSummary.losses}L</span>
+                  </span>
                 </div>
               </div>
 
