@@ -6,6 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { format } from "date-fns"
 import { SimpleLineChart } from "@/components/simple-line-chart"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button"
+import { ChevronDown } from "lucide-react"
 
 interface PlayerDetailsModalProps {
   playerId: string
@@ -101,8 +105,17 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
   const [allGames, setAllGames] = useState<any[]>([])
   const [eloProgression, setEloProgression] = useState<EloDataPoint[]>([])
   const [frequentOpponents, setFrequentOpponents] = useState<FrequentOpponent[]>([])
+  const [allOpponents, setAllOpponents] = useState<FrequentOpponent[]>([])
+  const [selectedOpponentIds, setSelectedOpponentIds] = useState<string[]>([])
   const [playerData, setPlayerData] = useState<any | null>(null)
   const [showAllKillteams, setShowAllKillteams] = useState(false)
+  const [filteredSummary, setFilteredSummary] = useState<{
+    games: number
+    wins: number
+    losses: number
+    draws: number
+    winRate: number
+  }>({ games: 0, wins: 0, losses: 0, draws: 0, winRate: 0 })
 
   useEffect(() => {
     if (open && playerId) {
@@ -115,17 +128,35 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
 
   useEffect(() => {
     if (playerData?.games) {
-      const stats = calculateFilteredStats(playerData.games, selectedKillteam, selectedOpponentKillteam)
+      const stats = calculateFilteredStats(
+        playerData.games,
+        selectedKillteam,
+        selectedOpponentKillteam,
+        selectedOpponentIds,
+      )
       setTacOpStats(stats.tacOpStats)
       setCritOpStats(stats.critOpStats)
       setPrimaryOpStats(stats.primaryOpStats)
       setKillzoneStats(stats.killzoneStats)
       setEnemyKillteamStats(stats.enemyKillteamStats)
+      setFilteredSummary(stats.summary)
     }
-  }, [playerData, selectedKillteam, selectedOpponentKillteam])
+  }, [playerData, selectedKillteam, selectedOpponentKillteam, selectedOpponentIds])
 
-  function calculateFilteredStats(games: any[], killteamFilter: string, opponentKillteamFilter: string) {
+  function calculateFilteredStats(
+    games: any[],
+    killteamFilter: string,
+    opponentKillteamFilter: string,
+    opponentIds: string[],
+  ) {
     let filteredGames = games
+
+    // Filter by selected opponents (players)
+    filteredGames = filteredGames.filter((game) => {
+      const isPlayer1 = game.player1_id.toString() === playerId
+      const opponentId = isPlayer1 ? game.player2_id.toString() : game.player1_id.toString()
+      return opponentIds.includes(opponentId)
+    })
 
     // Filter by player's killteam
     if (killteamFilter !== "all") {
@@ -432,12 +463,54 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
     }))
     enemyKillteams.sort((a, b) => b.games - a.games)
 
+    let summaryWins = 0
+    let summaryLosses = 0
+    let summaryDraws = 0
+    filteredGames.forEach((game) => {
+      const isPlayer1 = game.player1_id.toString() === playerId
+      const playerScore = isPlayer1
+        ? game.player1_tacop_score +
+          game.player1_critop_score +
+          game.player1_killop_score +
+          (game.player1_primary_op_score || 0)
+        : game.player2_tacop_score +
+          game.player2_critop_score +
+          game.player2_killop_score +
+          (game.player2_primary_op_score || 0)
+      const opponentScore = isPlayer1
+        ? game.player2_tacop_score +
+          game.player2_critop_score +
+          game.player2_killop_score +
+          (game.player2_primary_op_score || 0)
+        : game.player1_tacop_score +
+          game.player1_critop_score +
+          game.player1_killop_score +
+          (game.player1_primary_op_score || 0)
+
+      if (playerScore > opponentScore) {
+        summaryWins++
+      } else if (playerScore < opponentScore) {
+        summaryLosses++
+      } else {
+        summaryDraws++
+      }
+    })
+
+    const summaryGames = filteredGames.length
+
     return {
       tacOpStats: tacOps,
       critOpStats: critOps,
       primaryOpStats: primaryOps,
       killzoneStats: killzones,
       enemyKillteamStats: enemyKillteams,
+      summary: {
+        games: summaryGames,
+        wins: summaryWins,
+        losses: summaryLosses,
+        draws: summaryDraws,
+        winRate: summaryGames > 0 ? (summaryWins / summaryGames) * 100 : 0,
+      },
     }
   }
 
@@ -495,9 +568,10 @@ export function PlayerDetailsModal({ playerId, playerName, open, onOpenChange }:
           games: stats.count,
         }))
         .sort((a, b) => b.games - a.games)
-        .slice(0, 5)
 
-      setFrequentOpponents(opponents)
+      setFrequentOpponents(opponents.slice(0, 5))
+      setAllOpponents(opponents)
+      setSelectedOpponentIds(opponents.map((o) => o.id))
 
       const eloData: EloDataPoint[] = []
       let lastKnownElo = 1200 // Starting ELO
@@ -758,30 +832,120 @@ setEnemyKillteamStats(enemyKillteams)
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Kill Teams</SelectItem>
-                        {killteamStats.map((kt) => (
-                          <SelectItem key={kt.name} value={kt.name}>
-                            {kt.name}
-                          </SelectItem>
-                        ))}
+                        {[...killteamStats]
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((kt) => (
+                            <SelectItem key={kt.name} value={kt.name}>
+                              {kt.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-2">
+                    <span className="text-sm text-muted-foreground">Opponent Kill Teams:</span>
+                    <Select value={selectedOpponentKillteam} onValueChange={setSelectedOpponentKillteam}>
+                      <SelectTrigger className="w-full md:w-[180px]">
+                        <SelectValue placeholder="Select kill team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Kill Teams</SelectItem>
+                        {[...allEnemyKillteamStats]
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((kt) => (
+                            <SelectItem key={kt.name} value={kt.name}>
+                              {kt.name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-2">
                     <span className="text-sm text-muted-foreground">Opponent:</span>
-                    <Select value={selectedOpponentKillteam} onValueChange={setSelectedOpponentKillteam}>
-                      <SelectTrigger className="w-full md:w-[180px]">
-                        <SelectValue placeholder="Select opponent" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Opponents</SelectItem>
-                        {allEnemyKillteamStats.map((kt) => (
-                          <SelectItem key={kt.name} value={kt.name}>
-                            {kt.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover modal>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full md:w-[180px] justify-between font-normal"
+                          disabled={allOpponents.length === 0}
+                        >
+                          <span className="truncate">
+                            {selectedOpponentIds.length === allOpponents.length
+                              ? "All Opponents"
+                              : selectedOpponentIds.length === 0
+                                ? "No Opponents"
+                                : `${selectedOpponentIds.length} selected`}
+                          </span>
+                          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[220px] p-0" align="end">
+                        <div className="flex items-center justify-between gap-2 border-b p-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOpponentIds(allOpponents.map((o) => o.id))}
+                            className="text-xs font-medium text-primary hover:underline"
+                          >
+                            Select all
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOpponentIds([])}
+                            className="text-xs font-medium text-muted-foreground hover:underline"
+                          >
+                            Uncheck all
+                          </button>
+                        </div>
+                        <div className="max-h-[240px] overflow-y-auto p-1">
+                          {allOpponents.map((opponent) => {
+                            const checked = selectedOpponentIds.includes(opponent.id)
+                            return (
+                              <label
+                                key={opponent.id}
+                                className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                              >
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(value) => {
+                                    setSelectedOpponentIds((prev) =>
+                                      value === true
+                                        ? [...prev, opponent.id]
+                                        : prev.filter((id) => id !== opponent.id),
+                                    )
+                                  }}
+                                />
+                                <span className="flex-1 truncate">{opponent.name}</span>
+                                <span className="text-xs text-muted-foreground">{opponent.games}G</span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border bg-muted/40 px-4 py-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Games total:</span>
+                  <span className="font-semibold">{filteredSummary.games}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Win Rate:</span>
+                  <span className={`font-semibold ${getWinRateColor(filteredSummary.winRate)}`}>
+                    {filteredSummary.winRate.toFixed(0)}%
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">W/D/L:</span>
+                  <span className="font-semibold">
+                    <span className="text-green-600">{filteredSummary.wins}W</span>
+                    {" / "}
+                    <span className="text-gray-500">{filteredSummary.draws}D</span>
+                    {" / "}
+                    <span className="text-red-600">{filteredSummary.losses}L</span>
+                  </span>
                 </div>
               </div>
 
