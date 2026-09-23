@@ -808,7 +808,7 @@ setEnemyKillteamStats(enemyKillteams)
                   </div>
                   <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-2">
                     <span className="text-sm text-muted-foreground">Opponent:</span>
-                    <Popover>
+                    <Popover modal>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
