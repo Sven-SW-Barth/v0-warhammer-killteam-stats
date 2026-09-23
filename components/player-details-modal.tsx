@@ -782,11 +782,13 @@ setEnemyKillteamStats(enemyKillteams)
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Kill Teams</SelectItem>
-                        {killteamStats.map((kt) => (
-                          <SelectItem key={kt.name} value={kt.name}>
-                            {kt.name}
-                          </SelectItem>
-                        ))}
+                        {[...killteamStats]
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((kt) => (
+                            <SelectItem key={kt.name} value={kt.name}>
+                              {kt.name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -798,11 +800,13 @@ setEnemyKillteamStats(enemyKillteams)
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Kill Teams</SelectItem>
-                        {allEnemyKillteamStats.map((kt) => (
-                          <SelectItem key={kt.name} value={kt.name}>
-                            {kt.name}
-                          </SelectItem>
-                        ))}
+                        {[...allEnemyKillteamStats]
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((kt) => (
+                            <SelectItem key={kt.name} value={kt.name}>
+                              {kt.name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
